@@ -1,0 +1,76 @@
+from app import db 
+from datetime import datetime, timezone
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key = True)
+    email = db.Column(db.String(120), unique=True, nullable = False)
+    password = db.Column(db.String(200), nullable = False)
+    role = db.Column(db.String(20), nullable = False)
+    created_at = db.Column(db.DateTime, default = lambda: datetime.now(timezone.utc))
+    student_profile = db.relationship('Student', backref='user', uselist=False)
+    company_profile = db.relationship('Company', backref='user', uselist = False)
+
+class Student(db.Model):
+    __tablename__ = 'students'
+
+    id = db.Column(db.Integer, primary_key = True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable = False)
+    full_name = db.Column(db.String(100), nullable = False)
+    phone = db.Column(db.String(15))
+    education = db.Column(db.String(200))
+    skills = db.Column(db.String(300))
+    resume = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default = lambda: datetime.now(timezone.utc))
+    applications = db.relationship('Application', backref='student', lazy=True)
+
+class Company(db.Model):
+    __tablename__ = 'companies'
+
+    id = db.Column(db.Integer, primary_key = True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable = False)
+    name = db.Column(db.String(100), nullable = False)
+    industry = db.Column(db.String(100))
+    location = db.Column(db.String(100))
+    website = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    is_approved = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    jobs = db.relationship('Job', backref='company', lazy= True)
+
+class Job(db.Model):
+    __tablename__ = 'jobs'
+
+    id = db.Column(db.Integer, primary_key = True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable = False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    skills_required = db.Column(db.Text)
+    salary = db.Column(db.Float)
+    location = db.Column(db.String(100))
+    status = db.Column(db.String(20), default = 'pending')
+    created_at = db.Column(db.DateTime, default = lambda: datetime.now(timezone.utc))
+    applications = db.relationship('Application', backref='job', lazy = True) 
+
+class Application(db.Model):
+    __tablename__ = 'applications'
+
+    id = db.Column(db.Integer, primary_key = True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable = False)
+    status = db.Column(db.String(20), default='applied')
+    applied_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    notified = db.Column(db.Boolean, default = True)
+    placement = db.relationship('Placement', backref='application', uselist=False)
+
+class Placement(db.Model):
+    __tablename__ = 'placements'
+
+    id = db.Column(db.Integer, primary_key = True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable = False)
+    salary = db.Column(db.Float)
+    joining_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
