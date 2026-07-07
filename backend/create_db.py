@@ -1,3 +1,4 @@
+from werkzeug.security import generate_password_hash
 from app import create_app, db
 from models import User 
 
@@ -11,7 +12,7 @@ with app.app_context():
     if not admin:
         admin = User(
             email = 'admin@placeme.com',
-            password = 'admin123',
+            password = generate_password_hash('admin123'),
             role = 'admin'
         )
         db.session.add(admin)
