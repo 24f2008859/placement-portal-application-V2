@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from models import User, Company
@@ -45,3 +45,248 @@ def approve_company(company_id):
     db.session.commit()
 
     return jsonify({'message': 'Company approved successfully'}), 200
+
+@admin_bp.route('/admin/dashboard/stats', methods = ['GET'])
+@jwt_required()
+def dashboard_stats():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Student, Company, Job, Application
+    total_students = Student.query.count()
+    total_companies = Company.query.count()
+    total_jobs = Job.query.count()
+    total_applications = Application.query.count()
+
+    return jsonify({
+        'total_students': total_students,
+        'total_companies': total_companies,
+        'total_jobs': total_jobs,
+        'total_applications': total_applications
+    }), 200
+
+@admin_bp.route('/admin/companies/<int:company_id>/remove', methods=['DELETE'])
+@jwt_required()
+def remove_company(company_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Company
+    company = Company.query.get(company_id)
+    if not company:
+        return jsonify({'message': 'Company not found'}), 404
+    
+    db.session.delete(company)
+    db.session.commit()
+
+    return jsonify({'message': 'Company removed successfully'}), 200
+
+@admin_bp.route('/admin/companies/<int:company_id>/deactivate', methods=['PUT'])
+@jwt_required()
+def deactivate_company(company_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Company
+    company = Company.query.get(company_id)
+
+    if not company:
+        return jsonify({'message': 'Company not found'}), 404
+    
+    company.is_active = False
+    db.session.commit()
+
+    return jsonify({'message': 'Company deactivated successfully'}), 200
+
+@admin_bp.route('/admin/companies/search', methods = ['GET'])
+@jwt_required()
+def search_companies():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Company
+    name = request.args.get('name', '')
+    industry = request.args.get('industry', '')
+    
+    query = Company.query 
+
+    if name:
+        query = query.filter(Company.name.contains(name))
+    if industry:
+        query = query.filter(Company.industry.contains(industry))
+
+    companies = query.all()
+
+    result = []
+    for company in companies:
+        result.append({
+            'id': company.id, 
+            'name': company.name,
+            'industry': company.industry,
+            'location': company.location, 
+            'is_approved': company.is_approved,
+            'is_active': company.is_active
+        })
+    return jsonify(result), 200
+
+@admin_bp.route('/admin/students/search', methods = ['GET'])
+@jwt_required()
+def search_students():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Student
+    name = request.args.get('name', '')
+    student_id = request.args.get('id', '')
+    phone = request.args.get('phone', '')
+
+    query = Student.query
+
+    if name:
+        query = query.filter(Student.full_name.contains(name))
+    if student_id:
+        query = query.filter(Student.id == student_id)
+    if phone:
+        query = query.filter(Student.phone.contains(phone))
+
+    students = query.all()
+
+    result = []
+    for student in students:
+        result.append({
+            'id': student.id,
+            'full_name': student.full_name,
+            'phone': student.phone,
+            'education': student.education,
+            'skills': student.skills,
+            'is_active': student.is_active
+        })
+
+    return jsonify(result), 200
+
+@admin_bp.route('/admin/students/<int:student_id>/deactivate', methods=['PUT'])
+@jwt_required()
+def deactivate_student(student_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Student
+    student = Student.query.get(student_id)
+
+    if not student:
+        return jsonify({'message': 'Student not found'}), 404
+    
+    student.is_active = False
+    db.session.commit()
+
+    return jsonify({'message': 'Student deactivated successfully'}), 200
+
+@admin_bp.route('/admin/jobs', methods=['GET'])
+@jwt_required()
+def get_all_jobs():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Job
+    jobs = Job.query.all()
+
+    result = []
+    for job in jobs:
+        result.append({
+            'id': job.id,
+            'title': job.title,
+            'company': job.company.name,
+            'location': job.location,
+            'salary': job.salary,
+            'status': job.status,
+            'skills_required': job.skills_required
+        })
+
+    return jsonify(result), 200
+
+@admin_bp.route('/admin/jobs/<int:job_id>/approve', methods=['PUT'])
+@jwt_required()
+def approve_job(job_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Job 
+    job = Job.query.get(job_id)
+
+    if not job:
+        return jsonify({'message': 'Job not found'}), 404
+    
+    job.status = 'approved'
+    db.session.commit()
+
+    return jsonify({'message': 'Job approved successfully'}), 200
+
+
+@admin_bp.route('/admin/jobs/<int:job_id>/remove', methods=['DELETE'])
+@jwt_required()
+def remove_job(job_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Job 
+    job = Job.query.get(job_id)
+
+    if not job:
+        return jsonify({'message': 'Job not found'}), 404
+    
+    db.session.delete(job)
+    db.session.commit()
+
+    return jsonify({'message': 'Job removed successfully'}), 200
+
+@admin_bp.route('/admin/applications', methods=['GET'])
+@jwt_required()
+def get_all_applications():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from models import Application
+    applications = Application.query.all()
+
+    result = []
+    for application in applications:
+        result.append({
+            'id': application.id,
+            'student': application.student.full_name,
+            'job': application.job.title,
+            'company': application.job.company.name,
+            'status': application.status,
+            'applied_at': application.applied_at.strftime('%Y-%m-%d')
+        })
+
+    return jsonify(result), 200

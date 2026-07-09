@@ -24,6 +24,7 @@ class Student(db.Model):
     resume = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default = lambda: datetime.now(timezone.utc))
     applications = db.relationship('Application', backref='student', lazy=True)
+    is_active = db.Column(db.Boolean, default = True)
 
 class Company(db.Model):
     __tablename__ = 'companies'
@@ -38,6 +39,7 @@ class Company(db.Model):
     is_approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     jobs = db.relationship('Job', backref='company', lazy= True)
+    is_active = db.Column(db.Boolean, default = True)
 
 class Job(db.Model):
     __tablename__ = 'jobs'
