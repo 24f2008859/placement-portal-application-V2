@@ -40,7 +40,6 @@
         </div>
       </div>
     </div>
-  </div>
 
     <!-- Pending Companies -->
     <div class="card mb-4">
@@ -71,6 +70,48 @@
             </table>
         </div>
     </div>
+    
+    <!-- Search Companies -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Search Companies</h4>
+                <div class="row mb-3">
+                    <div class="col-md-5">
+                        <input type="text" class="form-control" placeholder="Search by name" v-model="companySearch.name">
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" class="form-control" placeholder="Search by industry" v-model = "companySearch.industry">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" @click="searchCompanies">Search</button>
+                    </div>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Industry</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="company in searchedCompanies" :key="company.id">
+                            <td>{{ company.name }}</td>
+                            <td>{{ company.industry }}</td>
+                            <td>{{ company.location }}</td>
+                            <td>{{ company.is_approved ? 'Approved' : 'Pending' }}</td>
+                            <td>
+                            <button class="btn btn-warning btn-sm me-2" @click="deactivateCompany(company.id)">Deactivate</button>
+                            <button class="btn btn-danger btn-sm" @click="removeCompany(company.id)">Remove</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </template>
 <script>
 export default {
@@ -83,7 +124,12 @@ export default {
                 total_jobs: 0,
                 total_applications: 0
             },
-            pendingCompanies: []
+            pendingCompanies: [],
+            companySearch: {
+                name: '',
+                industry: ''
+            },
+            searchedCompanies: []
         }
     },
     mounted() {
@@ -136,7 +182,32 @@ export default {
             alert(data.message)
             this.fetchPendingCompanies()
             this.fetchStats()
-        },   
+        },
+        async searchCompanies() {
+            const token = localStorage.getItem('token')
+            const response = await fetch(
+                `http://127.0.0.1:5000/admin/companies/search?name=${this.companySearch.name}&industry=${this.companySearch.industry}`,
+                {
+                    headers: {
+                    'Authorization': `Bearer ${token}`
+                    }        
+                }
+            )
+           const data =await response.json()
+           this.searchedCompanies = data
+        },
+        async deactivateCompany(companyId) {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`http://127.0.0.1:5000/admin/companies/${companyId}/deactivate`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await response.json()
+            alert(data.message)
+            this.searchCompanies()
+        },
         logout() {
             localStorage.removeItem('token')
             localStorage.removeItem('role')
