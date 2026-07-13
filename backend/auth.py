@@ -28,6 +28,16 @@ def register_student():
     )
     db.session.add(user)
     db.session.commit()
+    from models import Student
+    student = Student(
+        user_id = user.id,
+        full_name = data.get('full_name', ''),
+        phone = data.get('phone', ''),
+        education = data.get('education', ''),
+        skills = data.get('skills', '')
+    )
+    db.session.add(student)
+    db.session.commit()
 
     return jsonify({'message':'Student registered successfully'}), 201
 
