@@ -27,4 +27,7 @@ def create_app():
     from company import company_bp
     app.register_blueprint(company_bp)
 
+    from student import student_bp 
+    app.register_blueprint(student_bp)
+
     return app
