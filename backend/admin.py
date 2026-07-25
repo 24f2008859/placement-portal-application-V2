@@ -290,3 +290,29 @@ def get_all_applications():
         })
 
     return jsonify(result), 200
+
+@admin_bp.route('/admin/students/<int:student_id>', methods=['GET'])
+@jwt_required()
+def get_student_profile(student_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+
+    from models import Student
+    student = Student.query.get(student_id)
+
+    if not student:
+        return jsonify({'message': 'Student not found'}), 404
+
+    return jsonify({
+        'id': student.id,
+        'full_name': student.full_name,
+        'email': student.user.email,
+        'phone': student.phone,
+        'education': student.education,
+        'skills': student.skills,
+        'resume': student.resume,
+        'is_active': student.is_active
+    }), 200

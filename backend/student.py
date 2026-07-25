@@ -199,3 +199,34 @@ def get_my_application():
         })
 
     return jsonify(result), 200
+
+@student_bp.route('/student/placements', methods=['GET'])
+@jwt_required()
+def get_placement_history():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
+    from models import Placement
+    placements = Placement.query.filter_by(student_id = student.id).all()
+
+    result = []
+    for placement in placements:
+        result.append({
+            'id': placement.id,
+            'company': placement.company.name,
+            'job_title': placement.application.job.title,
+            'salary': placement.salary,
+            'joining_date': placement.joining_date,
+            'created_at': placement.created_at.strftime('%Y-%m-%d')
+        })
+
+    return jsonify(result), 200
+
+
+
+

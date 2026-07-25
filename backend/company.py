@@ -152,6 +152,15 @@ def update_application_status(app_id):
         return jsonify({'message': 'Invalid status'}), 400
     
     application.status = data['status']
+    if data['status'] == 'selected':
+        from models import Placement
+        placement = Placement(
+            application_id = application.id,
+            student_id = application.student_id,
+            company_id = application.job.company_id,
+            salary = application.job.salary
+        )
+        db.session.add(placement)
     application.notified = False
     db.session.commit()
 

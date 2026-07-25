@@ -108,6 +108,31 @@
                 </table>
             </div>
         </div>
+
+        <!-- Placement History -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Placement History</h4>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Job Title</th>
+                            <th>Salary</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="placement in placements" :key="placement.id">
+                            <td>{{ placement.company }}</td>
+                            <td>{{ placement.job_title }}</td>
+                            <td>{{ placement.salary }}</td>
+                            <td>{{ placement.created_at }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -125,13 +150,15 @@ export default {
             jobs: [],
             applications: [],
             searchQuery: '',
-            resumeFile: null
+            resumeFile: null,
+            placements: []
         }
     },
     mounted() {
         this.fetchProfile()
         this.fetchJobs()
         this.fetchApplications()
+        this.fetchPlacements()
     },
     methods: {
         async fetchProfile() {
@@ -224,6 +251,16 @@ export default {
             const data = await response.json()
             alert(data.message)
             this.fetchProfile()
+        },
+        async fetchPlacements() {
+            const token = localStorage.getItem('token')
+            const response = await fetch('http://127.0.0.1:5000/student/placements', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await response.json()
+            this.placement = data
         },
         logout() {
             localStorage.removeItem('token')

@@ -76,3 +76,5 @@ class Placement(db.Model):
     salary = db.Column(db.Float)
     joining_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    company = db.relationship('Company', foreign_keys = [company_id])
+    student = db.relationship('Student', foreign_keys=[student_id])
