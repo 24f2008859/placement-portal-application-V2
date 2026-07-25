@@ -103,6 +103,25 @@ def get_approved_jobs():
 @student_bp.route('/student/resume', methods=['POST'])
 @jwt_required()
 def upload_resume():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
+    if 'resume' not in request.files:
+        return jsonify({'message': 'No file provided'}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        return jsonify({'message': 'No file selected'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'message': 'Only PDF, DOC, DOCX files allowed'}), 400
+    
 @student_bp.route('/student/jobs/<int:job_id>/apply', methods=['POST'])
 @jwt_required()
 def apply_job(job_id):
@@ -141,6 +160,18 @@ def apply_job(job_id):
     db.session.commit()
 
     return jsonify({'message': 'Resume uploaded successfully', 'filename': filename}), 200
+
+@student_bp.route('/student/jobs/<int:job_id>/apply', methods=['POST'])
+@jwt_required()
+def apply_job(job_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
     job = Job.query.get(job_id)
     if not job or job.status != 'approved':
         return jsonify({'message': 'Job not found or not approved'}), 404
