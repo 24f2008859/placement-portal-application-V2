@@ -103,6 +103,9 @@ def get_approved_jobs():
 @student_bp.route('/student/resume', methods=['POST'])
 @jwt_required()
 def upload_resume():
+@student_bp.route('/student/jobs/<int:job_id>/apply', methods=['POST'])
+@jwt_required()
+def apply_job(job_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
 
@@ -138,3 +141,52 @@ def upload_resume():
     db.session.commit()
 
     return jsonify({'message': 'Resume uploaded successfully', 'filename': filename}), 200
+    job = Job.query.get(job_id)
+    if not job or job.status != 'approved':
+        return jsonify({'message': 'Job not found or not approved'}), 404
+
+    existing_application = Application.query.filter_by(
+        student_id = student.id,
+        job_id = job_id
+    ).first()
+
+    if existing_application:
+        return jsonify({'message':'You have already applied for this job'}), 409
+
+    application = Application(
+        student_id = student.id,
+        job_id = job.id,
+        status = 'applied'
+    )
+    db.session.add(application)
+    db.session.commit()
+
+    return jsonify({'message': 'Application submitted successfully'}), 201
+
+@student_bp.route('/student/applications', methods=['GET'])
+@jwt_required()
+def get_my_application():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
+    applications = Application.query.filter_by(student_id = student.id).all()
+
+    result = []
+    for app in applications:
+        result.append({
+            'id': app.id,
+            'job_title':app.job.title,
+            'company': app.job.company.name,
+            'location': app.job.location,
+            'salary': app.job.salary,
+            'status': app.status,
+            'applied_at': app.applied_at.strftime('%Y-%m-%d'),
+            'notified': app.notified
+        })
+
+    return jsonify(result), 200

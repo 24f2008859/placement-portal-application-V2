@@ -26,6 +26,7 @@
                         <label>Skills</label>
                         <input type="text" class="form-control" v-model="profile.skills">
                     </div>
+<<<<<<< HEAD
                     <div class="col-md-12 mb-3">
                         <label>Resume (PDF, DOC, DOCX)</label>
                         <input type="file" class="form-control" @change="handleFileUpload" accept=".pdf,.doc,.docx">
@@ -36,6 +37,10 @@
                     <div class="col-md-12">
                         <button class="btn btn-primary me-2" @click="updateProfile">Update Profile</button>
                         <button class="btn btn-secondary" @click="uploadResume">Upload Resume</button>
+=======
+                    <div class="col-md-12">
+                        <button class="btn btn-primary" @click="updateProfile">Update Profile</button>
+>>>>>>> 567db1a3601470594496743fbc2977d7075c0881
                     </div>
                 </div>
             </div>
