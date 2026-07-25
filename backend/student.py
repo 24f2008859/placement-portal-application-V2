@@ -9,6 +9,10 @@ def get_current_student(user_id):
     student = Student.query.filter_by(user_id = user_id).first()
     return student 
 
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ['pdf', 'doc', 'docx']
+
 @student_bp.route('/student/profile', methods=['GET'])
 @jwt_required()
 def get_profile():
@@ -95,3 +99,42 @@ def get_approved_jobs():
         })
 
     return jsonify(result), 200
+
+@student_bp.route('/student/resume', methods=['POST'])
+@jwt_required()
+def upload_resume():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
+    if 'resume' not in request.files:
+        return jsonify({'message': 'No file provided'}), 400
+
+    file = request.files['resume']
+
+    if file.filename == '':
+        return jsonify({'message': 'No file selected'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'message': 'Only PDF, DOC, DOCX files allowed'}), 400
+
+    from werkzeug.utils import secure_filename
+    from flask import current_app
+    import os 
+
+    filename = secure_filename(file.filename)
+    filename = f"student_{student.id}_{filename}"
+
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    os.makedirs(upload_folder, exist_ok=True)
+
+    file.save(os.path.join(upload_folder, filename))
+
+    student.resume = filename
+    db.session.commit()
+
+    return jsonify({'message': 'Resume uploaded successfully', 'filename': filename}), 200
