@@ -260,7 +260,7 @@ export default {
                 }
             })
             const data = await response.json()
-            this.placement = data
+            this.placements = data
         },
         logout() {
             localStorage.removeItem('token')
