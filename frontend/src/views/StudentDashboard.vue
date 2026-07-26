@@ -133,6 +133,15 @@
                 </table>
             </div>
         </div>
+
+        <!-- Export Applications -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Export Applications</h4>
+                <button class="btn btn-primary" @click="exportApplications">Export as CSV</button>
+                <p class="mt-2" v-if="exportMessage">{{ exportMessage }}</p>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -151,7 +160,9 @@ export default {
             applications: [],
             searchQuery: '',
             resumeFile: null,
-            placements: []
+            placements: [],
+            exportMessage: '',
+            exportTaskId: ''
         }
     },
     mounted() {
@@ -261,6 +272,35 @@ export default {
             })
             const data = await response.json()
             this.placements = data
+        },
+        async exportApplications() {
+            const token = localStorage.getItem('token')
+            const response = await fetch('http://127.0.0.1:5000/student/export', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await response.json()
+            this.exportMessage = data.message 
+            this.exportTaskId = data.task_id
+
+            setTimeout(() => this.checkExportStatus(), 3000)
+        },
+        async checkExportStatus() {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`http://127.0.0.1:5000/student/export/${this.exportTaskId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            const data = await response.json()
+            if (data.status === 'complete') {
+                this.exportMessage = `Export complete! File: ${data.filename}`
+            } else if (data.status === 'pending') {
+                this.exportMessage = 'Still processing...'
+                setTimeout(() => this.checkExportStatus(), 3000)
+            }
         },
         logout() {
             localStorage.removeItem('token')

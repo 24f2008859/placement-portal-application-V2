@@ -227,6 +227,37 @@ def get_placement_history():
 
     return jsonify(result), 200
 
+@student_bp.route('/student/export', methods=['POST'])
+@jwt_required()
+def export_applications():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+
+    from tasks import export_applications_csv
+    task = export_applications_csv.delay(student.id)
+
+    return jsonify({
+        'message': 'Export started, you will be notified when ready',
+        'task_id': task.id
+    }), 202 
+
+@student_bp.route('/student/export/<task_id>', methods=['GET'])
+@jwt_required()
+def check_export_status(task_id):
+    from tasks import celery, export_applications_csv
+    task = export_applications_csv.AsyncResult(task_id)
+
+    if task.state == 'PENDING':
+        return jsonify({'status': 'pending', 'message': 'Export is being processed'}), 200
+    elif task.state == 'SUCCESS':
+        return jsonify({'status': 'complete', 'filename': task.result}), 200
+    else:
+        return jsonify({'status': 'failed', 'message': 'Export failed'}), 500
 
 
 
