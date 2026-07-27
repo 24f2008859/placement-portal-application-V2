@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify 
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db 
+from app import db, cache 
 from models import User, Student, Job, Application 
 
 student_bp = Blueprint('student', __name__)
@@ -64,6 +64,7 @@ def update_profile():
 
 @student_bp.route('/student/jobs', methods=['GET'])
 @jwt_required()
+@cache.cached(timeout=300, key_prefix='approved_jobs')
 def get_approved_jobs():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)

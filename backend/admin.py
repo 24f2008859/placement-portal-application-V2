@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
+from app import db, cache
 from models import User, Company
 
 admin_bp = Blueprint('admin', __name__)
@@ -48,6 +48,7 @@ def approve_company(company_id):
 
 @admin_bp.route('/admin/dashboard/stats', methods = ['GET'])
 @jwt_required()
+@cache.cached(timeout=300, key_prefix='admin_stats')
 def dashboard_stats():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
@@ -316,3 +317,31 @@ def get_student_profile(student_id):
         'resume': student.resume,
         'is_active': student.is_active
     }), 200
+
+@admin_bp.route('/admin/students/<int:student_id>/applications', methods=['GET'])
+@jwt_required()
+def get_student_applications(student_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+
+    from models import Student, Application 
+    student = Student.query.get(student_id)
+
+    if not student:
+        return jsonify({'message': 'Student not found'}), 404
+
+    applications = Application.query.filter_by(student_id=student_id).all()
+
+    result = []
+    for app in applications:
+        result.append({
+            'id': app.id,
+            'job_title': app.job.title,
+            'company': app.job.company.name,
+            'status': app.status,
+            'applied_at': app.applied_at.strftime('%Y-%m-%d')
+        })
+    return jsonify(result), 200

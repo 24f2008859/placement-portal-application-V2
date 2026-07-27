@@ -29,7 +29,8 @@ celery.conf.beat_schedule = {
 def send_interview_reminders():
     with flask_app.app_context():
         from models import Application
-        from datetime import date
+        from flask_mail import Message
+        from app import mail 
 
         interviews = Application.query.filter_by(status='interview').all()
 
@@ -37,14 +38,23 @@ def send_interview_reminders():
             student_email = application.student.user.email
             job_title = application.job.title
             company_name = application.job.company.name
-            print(f"Reminder sent to {student_email}: Interview for {job_title} at {company_name}")
+
+            msg = Message(
+                subject=f"Interview Reminder - {job_title} at {company_name}",
+                recipients=[student_email],
+                body=f"Dear Student, \n\nThis is a reminder that you have an interview for {job_title} at {company_name}.\n\nBest regards, \nPlaceME Team"
+            )
+            mail.send(msg)
+            print(f"Reminder sent to {student_email}")
 
         return f"Reminders sent to {len(interviews)} students"
 
 @celery.task 
 def send_monthly_report(): 
     with flask_app.app_context():
-        from models import Application, Placement
+        from models import Application, Placement, User
+        from flask_mail import Message
+        from app import mail
         from datetime import datetime, timezone
 
         current_month = datetime.now(timezone.utc).month
@@ -53,7 +63,7 @@ def send_monthly_report():
         total_applications = Application.query.count()
         total_placements = Placement.query.count()
 
-        report = f"""
+        report_html = f"""
         <html>
         <body>
         <h1>Monthly Placement Report - {current_month}/{current_year}</h1>
@@ -63,8 +73,16 @@ def send_monthly_report():
         </html>
         """
 
-        print(f"Monthly report generated: {report}")
-        return "Monthly report generated successfully"
+        admin = User.query.filter_by(role='admin').first()
+
+        msg = Message(
+            subject=f"Monthly Placement Report - {current_month}/{current_year}",
+            recipients=[admin.email],
+            html=report_html 
+        )
+        mail.send(msg)
+
+        return "Monthly report sent to admin"
 
 @celery.task
 def export_applications_csv(student_id): 

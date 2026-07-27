@@ -152,13 +152,45 @@
                             <td>{{ student.skills }}</td>
                             <td>{{ student.is_active ? 'Active' : 'Deactivated' }}</td>
                             <td>
-                                <button class="btn btn-warning btn-sm me-2" @click="deactivateStudent(student.id)">Deactivate</button>
+                                <button class="btn btn-info btn-sm me-2" @click="viewStudentHistory(student.id)">View History</button>
+                                <button class="btn btn-warning btn-sm" @click="deactivateStudent(student.id)">Deactivate</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+    <!-- Student History -->
+        <div class="card mb-4" v-if="selectedStudent">
+            <div class="card-body">
+                <h4>Student History - {{ selectedStudent.full_name }}</h4>
+                <p><strong>Email:</strong>{{ selectedStudent.email }}</p>
+                <p><strong>Phone:</strong>{{ selectedStudent.phone }}</p>
+                <p><strong>Education:</strong>{{ selectedStudent.education }}</p>
+                <p><strong>Skills:</strong>{{ selectedStudent.skills }}</p>
+                <h5 class="mt-3">Applications</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Job</th>
+                            <th>Company</th>
+                            <th>Status</th>
+                            <th>Applied At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="app in selectedStudentApplications" :key="app.id"> 
+                            <td>{{ app.job_title }}</td>
+                            <td>{{ app.company }}</td>
+                            <td>{{ app.status }}</td>
+                            <td>{{ app.applied_at }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
      <!-- All Jobs  -->
         <div class="card mb-4">
             <div class="card-body">
@@ -239,7 +271,9 @@ export default {
             },
             searchedStudents: [],
             allJobs:[],
-            allApplications: []
+            allApplications: [],
+            selectedStudent: null,
+            selectedStudentApplications: []
         }
         
     },
@@ -387,6 +421,19 @@ export default {
             })
             const data = await response.json()
             this.allApplications = data
+        },
+        async viewStudentHistory(studentId) {
+            const token = localStorage.getItem('token')
+
+            const profileResponse = await fetch(`http://127.0.0.1:5000/admin/students/${studentId}`, {
+                headers: {'Authorization': `Bearer ${token}`}
+            })
+            this.selectedStudent = await profileResponse.json()
+
+            const appsResponse = await fetch(`http://127.0.0.1:5000/admin/students/${studentId}/applications`, {
+                headers: {'Authorization': `Bearer ${token}`}
+            })
+            this.selectedStudentApplications = await appsResponse.json()
         },
         logout() {
             localStorage.removeItem('token')
