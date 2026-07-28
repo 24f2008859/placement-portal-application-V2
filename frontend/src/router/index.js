@@ -3,6 +3,7 @@ import LoginView from '../views/LoginView.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import StudentDashboard from '../views/StudentDashboard.vue'
 import CompanyDashboard from '../views/CompanyDashboard.vue'
+import LandingPage from '../views/LandingPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,10 @@ const router = createRouter({
     {
       path: '/company/dashboard',
       component: CompanyDashboard
+    },
+    {
+      path: '/',
+      component: LandingPage
     }
   ],
 })

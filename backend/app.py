@@ -36,4 +36,7 @@ def create_app():
     from student import student_bp 
     app.register_blueprint(student_bp)
 
+    from public import public_bp
+    app.register_blueprint(public_bp)
+
     return app
