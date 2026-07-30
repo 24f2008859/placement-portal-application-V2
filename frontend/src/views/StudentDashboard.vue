@@ -1,10 +1,9 @@
 <template>
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Student Dashboard</h2>
-            <button class="btn btn-danger float-end" @click="logout">Logout</button>
-        </div>
-        
+    <div>
+        <NavBar />
+        <div class="container mt-4">
+            <h2 class="mb-4">Student Dashboard</h2>
+        </div>    
         <!-- Profile Section -->
         <div class="card mb-4">
             <div class="card-body">
@@ -146,8 +145,13 @@
 </template>
 
 <script>
+import NavBar from '../components/NavBar.vue';
+
 export default {
     name: 'StudentDashboard',
+    components: {
+        NavBar
+    },
     data() {
         return{
             profile: {

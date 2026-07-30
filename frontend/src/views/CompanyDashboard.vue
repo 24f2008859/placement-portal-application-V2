@@ -1,8 +1,8 @@
 <template>
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Company Dashboard - {{ companyName }}</h2>
-            <button class="btn btn-damger" @click="logout">Logout</button>
+    <div>
+        <NavBar />
+        <div class="container mt-4">
+            <h2 class="mb-4">Company Dashboard - {{ companyName }}</h2>
         </div>
     </div>
 
@@ -121,8 +121,12 @@
 </template>
 
 <script>
+import NavBar from '../components/NavBar.vue';
 export default {
     name: 'CompanyDashboard',
+    components: {
+        NavBar
+    },
     data() {
         return {
             companyName: '',
