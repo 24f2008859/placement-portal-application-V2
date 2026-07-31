@@ -345,3 +345,31 @@ def get_student_applications(student_id):
             'applied_at': app.applied_at.strftime('%Y-%m-%d')
         })
     return jsonify(result), 200
+
+@admin_bp.route('/admin/trigger-reminders', methods=['POST'])
+@jwt_required()
+def trigger_reminders():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+
+    from tasks import send_interview_reminders
+    send_interview_reminders.delay()
+
+    return jsonify({'message': 'Interview reminders triggered successfully'}), 200
+
+@admin_bp.route('/admin/generate-report', methods=['POST'])
+@jwt_required()
+def generate_report():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+    
+    from tasks import send_monthly_report
+    send_monthly_report.delay()
+    
+    return jsonify({'message': 'Monthly report generation triggered successfully'}), 200

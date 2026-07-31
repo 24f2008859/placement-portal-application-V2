@@ -76,6 +76,7 @@ export default {
         if (response.ok) {
           localStorage.setItem('token', data.access_token)
           localStorage.setItem('role', data.role)
+          localStorage.setItem('email', data.email)
 
           if (data.role === 'admin') {
             this.$router.push('/admin/dashboard')
