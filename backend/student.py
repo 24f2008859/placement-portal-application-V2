@@ -72,9 +72,17 @@ def get_approved_jobs():
     if current_user.role != 'student':
         return jsonify({'message': 'Student access required'}), 403
     
+    student = get_current_student(current_user_id)
     search = request.args.get('search', '')
 
+    # Get job ids student already applied to
+    applied_job_ids = [app.job_id for app in Application.query.filter_by(student_id = student.id).all()]
+
     query = Job.query.filter_by(status = 'approved')
+
+    # Exclude already applied jobs
+    if applied_job_ids:
+        query = query.filter(~Job.id.in_(applied_job_ids))
 
     if search:
         query = query.filter(

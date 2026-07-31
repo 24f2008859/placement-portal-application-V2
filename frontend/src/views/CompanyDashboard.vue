@@ -1,123 +1,134 @@
 <template>
-    <div>
-        <NavBar />
-        <div class="container mt-4">
-            <h2 class="mb-4">Company Dashboard - {{ companyName }}</h2>
-        </div>
-    </div>
+  <div style="background-color: #f8fafc; min-height: 100vh;">
+    <NavBar />
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Total Jobs Posted</h5>
-                    <h2>{{ totalJobs }}</h2>
-                </div>
-            </div>
+    <div class="container-fluid px-4 py-4">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+          <h3 class="fw-bold mb-1">{{ companyName }}
+            <span class="badge bg-success ms-2" style="font-size: 0.6rem;">APPROVED</span>
+          </h3>
+          <p class="text-muted small mb-0">Company Portal • Placement Drives Management</p>
         </div>
-        <div class="col-md-6">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title">Total Applications</h5>
-                    <h2>{{ totalApplications }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
+        <button class="btn btn-primary" @click="showJobForm = !showJobForm">
+          + Create Placement Drive
+        </button>
+      </div>
 
-    <!-- Post New Job -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h4>Post New Job</h4>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <input type="text" class="form-control" placeholder="Job title" v-model="newJob.title">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <input type="text" class="form-control" placeholder="Location" v-model="newJob.location">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <input type="text" class="form-control" placeholder="Skills Required" v-model="newJob.skills_required">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <input type="text" class="form-control" placeholder="Salary" v-model="newJob.salary">
-                </div>
-                <div class="col-md-12 mb-3">
-                    <textarea class="form-control" placeholder="Job Description" v-model="newJob.Description"></textarea>
-                </div>
-                <div class="col-md-12">
-                    <button class="btn btn-primary" @click="postJob">Post Job</button>
-                </div>
-            </div>
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <div class="card border-0 shadow-sm p-3">
+            <p class="text-muted small mb-1">Total Jobs Posted</p>
+            <h3 class="fw-bold mb-0">{{ totalJobs }}</h3>
+          </div>
         </div>
-    </div>
+        <div class="col-md-6 mb-3">
+          <div class="card border-0 shadow-sm p-3">
+            <p class="text-muted small mb-1">Total Applications</p>
+            <h3 class="fw-bold mb-0">{{ totalApplications }}</h3>
+          </div>
+        </div>
+      </div>
 
-    <!-- Jobs List -->
-    <div class="card mb-4">
+      <!-- Create Job Form -->
+      <div class="card border-0 shadow-sm mb-4" v-if="showJobForm">
         <div class="card-body">
-            <h4>My Job Postings</h4>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Location</th>
-                        <th>Salary</th>
-                        <th>Status</th>
-                        <th>Applications</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="job in jobs" :key="job.id">
-                        <td>{{ job.title }}</td>
-                        <td>{{ job.location }}</td>
-                        <td>{{ job.salary }}</td>
-                        <td>{{ job.status }}</td>
-                        <td>{{ job.total_applications }}</td>
-                        <td>
-                            <button class="btn btn-info btn-sm me-2" @click="viewApplications(job.id)">View Applicants</button>
-                            <button class="btn btn-warning btn-sm" @click="closeJob(job.id)">Close</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+          <h5 class="fw-bold mb-3">Create New Placement Drive</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Job Title *</label>
+              <input type="text" class="form-control" placeholder="Job Title" v-model="newJob.title">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" placeholder="Location" v-model="newJob.location">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Skills Required</label>
+              <input type="text" class="form-control" placeholder="Skills Required" v-model="newJob.skills_required">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Salary</label>
+              <input type="number" class="form-control" placeholder="Salary" v-model="newJob.salary">
+            </div>
+            <div class="col-md-12 mb-3">
+              <label class="form-label">Job Description</label>
+              <textarea class="form-control" placeholder="Job Description" v-model="newJob.description"></textarea>
+            </div>
+            <div class="col-md-12">
+              <button class="btn btn-primary me-2" @click="postJob">Submit Drive</button>
+              <button class="btn btn-outline-secondary" @click="showJobForm = false">Cancel</button>
+            </div>
+          </div>
         </div>
-    </div>
-    
-    <!-- Applications Section -->
-    <div class="card mb-4" v-if="selectedJobApplications.length > 0">
-        <div class="card-body">
-            <h4>Applicants</h4>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Skills</th>
-                        <th>Education</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="app in selectedJobApplications" :key="app.id"> 
-                        <td>{{ app.student_name }}</td>
-                        <td>{{ app.student_email }}</td>
-                        <td>{{ app.skills }}</td>
-                        <td>{{ app.education }}</td>
-                        <td>{{ app.status }}</td>
-                        <td>
-                            <button class="btn btn-success btn-sm me-1" @click="updateStatus(app.id, 'shortlisted')">Shortlist</button>
-                            <button class="btn btn-primary btn-sm me-1" @click="updateStatus(app.id, 'interview')">Interview</button>
-                            <button class="btn btn-warning btn-sm me-1" @click="updateStatus(app.id, 'selected')">Select</button>
-                            <button class="btn btn-danger btn-sm me-1" @click="updateStatus(app.id, 'rejected')">Reject</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+      </div>
+
+      <!-- Main Content -->
+      <div class="row">
+        <!-- Jobs List -->
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <h5 class="fw-bold mb-3">Your Placement Drives <span class="badge bg-primary">{{ jobs.length }}</span></h5>
+              <div v-for="job in jobs" :key="job.id"
+                class="p-3 mb-2 rounded border cursor-pointer"
+                :class="selectedJob && selectedJob.id === job.id ? 'border-primary bg-light' : ''"
+                @click="viewApplications(job.id)"
+                style="cursor: pointer;">
+                <div class="d-flex justify-content-between align-items-start">
+                  <h6 class="fw-bold mb-1">{{ job.title }}</h6>
+                  <span class="badge" :class="job.status === 'approved' ? 'bg-success' : job.status === 'pending' ? 'bg-warning' : 'bg-secondary'">
+                    {{ job.status.toUpperCase() }}
+                  </span>
+                </div>
+                <p class="text-muted small mb-1">Salary: {{ job.salary }} LPA</p>
+                <p class="text-muted small mb-0">Applicants: {{ job.total_applications }}</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Applications -->
+        <div class="col-md-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body">
+              <div v-if="!selectedJob">
+                <p class="text-muted text-center mt-4">Select a placement drive to view applications</p>
+              </div>
+              <div v-else>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="fw-bold mb-0">Candidate Applications Pipeline</h5>
+                  <span class="text-muted small">Showing {{ selectedJobApplications.length }} applicants</span>
+                </div>
+                <div v-for="app in selectedJobApplications" :key="app.id" class="card border mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="fw-bold mb-0">{{ app.student_name }}</h6>
+                        <p class="text-muted small mb-0">{{ app.student_email }}</p>
+                      </div>
+                      <span class="badge bg-primary">{{ app.status.toUpperCase() }}</span>
+                    </div>
+                    <p class="small mb-2"><strong>Skills:</strong> {{ app.skills }}</p>
+                    <p class="small mb-3"><strong>Education:</strong> {{ app.education }}</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                      <span class="text-muted small me-1">Move Status:</span>
+                      <button class="btn btn-success btn-sm" @click="updateStatus(app.id, 'shortlisted')">Shortlist</button>
+                      <button class="btn btn-primary btn-sm" @click="updateStatus(app.id, 'interview')">Interview</button>
+                      <button class="btn btn-warning btn-sm" @click="updateStatus(app.id, 'selected')">Select</button>
+                      <button class="btn btn-danger btn-sm" @click="updateStatus(app.id, 'rejected')">Reject</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
@@ -140,7 +151,9 @@ export default {
                 skills_required: '',
                 salary: '',
                 location: '',
-            }
+            },
+            showJobForm: false,
+            selectedJob: null
         }
     },
     mounted() {
@@ -187,8 +200,9 @@ export default {
             this.fetchDashboard()
         }, 
         async viewApplications(jobId) {
+            this.selectedJob = this.jobs.find(j => j.id === jobId)
             const token = localStorage.getItem('token')
-            const reponse = await fetch(`http://127.0.0.1:5000/company/jobs/${jobid}/applications`, {
+            const response = await fetch(`http://127.0.0.1:5000/company/jobs/${jobId}/applications`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
