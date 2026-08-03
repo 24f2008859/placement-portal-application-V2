@@ -21,6 +21,7 @@
                   class="form-control" 
                   v-model="email"
                   placeholder="Enter your email"
+                  @keyup.enter="login"
                 >
               </div>
               <div class="mb-3">
@@ -30,13 +31,15 @@
                   class="form-control" 
                   v-model="password"
                   placeholder="Enter your password"
+                  @keyup.enter="login"
                 >
               </div>
               <button 
                 class="btn btn-primary w-100"
                 @click="login"
+                :disabled="loading"
               >
-                Login
+                {{ loading ? 'Logging in...' : 'Login' }} 
               </button>
               <p class="text-danger mt-2">{{ errorMessage }}</p>
               <p class="text-center mt-3">Don't have an account? <router-link to="/register">Register here</router-link></p>
@@ -54,12 +57,22 @@ export default {
     return {
       email: '',
       password: '',
-      errorMessage: ''
+      errorMessage: '',
+      loading: false
     }
   },
   methods: {
     async login() {
+      this.errorMessage = ''
+
+      if (!this.email || !this.password) {
+        this.errorMessage = 'Please fill in both fields.'
+        return
+      }
+
       try {
+        this.loading = true
+
         const response = await fetch('http://127.0.0.1:5000/auth/login', {
           method: 'POST',
           headers: {
@@ -86,10 +99,13 @@ export default {
             this.$router.push('/company/dashboard')
           }
         } else {
-          this.errorMessage = data.message
+          this.errorMessage = data.message || 'Invalid email or password.'
         }
       } catch (error) {
         this.errorMessage = 'Something went wrong. Please try again.'
+      }
+      finally {
+        this.loading = false
       }
     }
   }

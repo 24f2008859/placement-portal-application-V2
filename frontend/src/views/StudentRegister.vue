@@ -28,19 +28,31 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Password *</label>
-                                <input type="password" class="form-control" v-model="form.password" placeholder="Min 6 characters">
+                                <input type="password" class="form-control" v-model="form.password" placeholder="Min 6 characters" @keyup.enter="register">
                                 <div class="text-danger small" v-if="errors.password">{{ errors.password }}</div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Phone</label>
-                                <input type="text" class="form-control" v-model="form.phone" placeholder="Enter your phone number">
-                            </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Education</label>
                                 <input type="text" class="form-control" v-model="form.education" placeholder="e.g. B.Tech Computer Science">
                             </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">CGPA</label>
+                                <input type="number" step="0.01" min="0" max="10" class="form-control" v-model="form.cgpa" placeholder="Enter your CGPA (e.g. 8.5)">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Branch</label>
+                                <input type="text" class="form-control" v-model="form.branch" placeholder="e.g. Data Science">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Graduation Year</label>
+                                <input type="number" min="1900" max="2100" class="form-control" v-model="form.graduation_year" placeholder="e.g. 2026">
+                            </div>
+
 
                             <div class="mb-3">
                                 <label class="form-label">Skills</label>
@@ -51,7 +63,7 @@
                             <div class="text-danger mb-3" v-if="errorMessage">{{ errorMessage }}</div>
                             <div class="text-success mb-3" v-if="successMessage">{{ successMessage }}</div>
 
-                            <button class="btn btn-primary w-100" @click="register">Register</button>
+                            <button class="btn btn-primary w-100" @click="register" :disabled="loading">{{ loading ? 'Registering...' : 'Register' }}</button>
                             <p class="text-center mt-3">Already have an account?<router-link to="/login">Login</router-link></p>
                         </div>
                     </div>
@@ -70,13 +82,16 @@ export default {
                 full_name: '',
                 email: '',
                 password: '',
-                phone: '',
                 education: '',
+                cgpa: '',
+                branch: '',
+                graduation_year: '',
                 skills: ''
             },
             errors: {},
             errorMessage: '',
-            successMessage: ''
+            successMessage: '',
+            loading: false
         }
     },
     methods: {
@@ -101,23 +116,33 @@ export default {
         },
         async register() {
             if (!this.validate()) return 
+            this.errorMessage = ''
+            this.successMessage = ''
+            this.loading = true
+            try {
+                const response = await fetch('http://127.0.0.1:5000/auth/register/student', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(this.form)
+                })
 
-            const response = await fetch('http://127.0.0.1:5000/auth/register/student', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(this.form)
-            })
-            const data = await response.json()
+                const data = await response.json()
 
-            if (response.ok) {
-                this.successMessage = 'Register successful! Please login.'
-                setTimeout(() => this.$router.push('/login'), 2000)
-            } else {
-                this.errorMessage = data.message
+                if (response.ok) {
+                    this.successMessage = 'Register successful! Please login.'
+                    setTimeout(() => this.$router.push('/login'), 2000)
+                } else {
+                    this.errorMessage = data.message
+                }
             }
-        }
+            catch (error) {
+                this.errorMessage = 'Unable to connect to the server.'
+            }
+            finally {
+                this.loading = false
+            }
     }
 }
 </script>
