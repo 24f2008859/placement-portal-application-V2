@@ -11,6 +11,9 @@ def get_pending_companies():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
 
+    if not current_user:
+        return jsonify({'message': 'User not found'}), 404
+
     if current_user.role != 'admin':
         return jsonify({'message': 'Admin access required'}), 403
     
@@ -44,6 +47,8 @@ def approve_company(company_id):
     company.is_approved = True
     db.session.commit()
 
+    cache.delete('admin_stats')
+
     return jsonify({'message': 'Company approved successfully'}), 200
 
 @admin_bp.route('/admin/dashboard/stats', methods = ['GET'])
@@ -56,17 +61,19 @@ def dashboard_stats():
     if current_user.role != 'admin':
         return jsonify({'message': 'Admin access required'}), 403
     
-    from models import Student, Company, Job, Application
+    from models import Student, Company, Job, Application, Placement
     total_students = Student.query.count()
     total_companies = Company.query.count()
     total_jobs = Job.query.count()
     total_applications = Application.query.count()
+    total_placements = Placement.query.count()
 
     return jsonify({
         'total_students': total_students,
         'total_companies': total_companies,
         'total_jobs': total_jobs,
-        'total_applications': total_applications
+        'total_applications': total_applications,
+        'total_placements': total_placements
     }), 200
 
 @admin_bp.route('/admin/companies/<int:company_id>/remove', methods=['DELETE'])
@@ -154,7 +161,8 @@ def search_students():
     from models import Student
     name = request.args.get('name', '')
     student_id = request.args.get('id', '')
-    phone = request.args.get('phone', '')
+    branch = request.args.get('branch', '')
+    graduation_year = request.args.get('graduation_year', '')
 
     query = Student.query
 
@@ -162,8 +170,16 @@ def search_students():
         query = query.filter(Student.full_name.contains(name))
     if student_id:
         query = query.filter(Student.id == student_id)
-    if phone:
-        query = query.filter(Student.phone.contains(phone))
+
+    if branch:
+        query = query.filter(
+            Student.branch.contains(branch)
+        )
+
+    if graduation_year:
+        query = query.filter(
+            Student.graduation_year == graduation_year
+        )
 
     students = query.all()
 
@@ -172,9 +188,11 @@ def search_students():
         result.append({
             'id': student.id,
             'full_name': student.full_name,
-            'phone': student.phone,
             'education': student.education,
             'skills': student.skills,
+            'cgpa': student.cgpa,
+            'branch': student.branch,
+            'graduation_year': student.graduation_year,
             'is_active': student.is_active
         })
 
@@ -244,6 +262,9 @@ def approve_job(job_id):
     job.status = 'approved'
     db.session.commit()
 
+    cache.delete('approved_jobs')
+    cache.delete('admin_stats')
+
     return jsonify({'message': 'Job approved successfully'}), 200
 
 
@@ -311,10 +332,12 @@ def get_student_profile(student_id):
         'id': student.id,
         'full_name': student.full_name,
         'email': student.user.email,
-        'phone': student.phone,
         'education': student.education,
         'skills': student.skills,
         'resume': student.resume,
+        'cgpa': student.cgpa,
+        'branch': student.branch,
+        'graduation_year': student.graduation_year,
         'is_active': student.is_active
     }), 200
 

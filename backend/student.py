@@ -19,6 +19,11 @@ def get_profile():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
 
+    if not current_user:
+        return jsonify({
+            'message': 'User not found'
+        }), 404
+
     if current_user.role != 'student':
         return jsonify({'message': 'Student access required'}), 403
     
@@ -30,11 +35,13 @@ def get_profile():
     return jsonify({
         'id': student.id,
         'full_name': student.full_name,
-        'phone': student.phone,
         'education': student.education,
         'skills': student.skills,
         'resume': student.resume,
-        'email': current_user.email
+        'email': current_user.email,
+        'cgpa': student.cgpa,
+        'branch': student.branch,
+        'graduation_year':student.graduation_year
     }), 200
 
 @student_bp.route('/student/profile', methods=['PUT'])
@@ -51,12 +58,17 @@ def update_profile():
     if not student:
         return jsonify({'message': 'Student profile not found'}), 404
     
-    data = request.get_json()
+    data = request.get_json() or {}
 
     student.full_name = data.get('full_name', student.full_name)
-    student.phone = data.get('phone', student.phone)
     student.education = data.get('education', student.education)
     student.skills = data.get('skills', student.skills)
+    student.cgpa = data.get('cgpa', student.cgpa)
+    student.branch = data.get('branch', student.branch)
+    student.graduation_year = data.get(
+        'graduation_year',
+        student.graduation_year
+    )
 
     db.session.commit()
 
@@ -159,10 +171,75 @@ def apply_job(job_id):
 
     student = get_current_student(current_user_id)
 
-    job = Job.query.get(job_id)
-    if not job or job.status != 'approved':
-        return jsonify({'message': 'Job not found or not approved'}), 404
+    if not student or not student.is_active:
+        return jsonify({
+            'message': 'Student account inactive'
+        })
 
+    job = Job.query.get(job_id)
+    if not job:
+        return jsonify({'message': 'Job not found'}), 404
+
+    if job.status != 'approved':
+        return jsonify({
+            'message': 'Job is not active'
+        }), 400
+
+
+    if job.minimum_cgpa is not None:
+        if student.cgpa is None or student.cgpa < job.minimum_cgpa:
+            return jsonify({
+                'message': 'You do not meet the minimum CGPA requirement'
+            }), 403
+
+    if job.eligibile_branch:
+        if (
+        student.branch is None or
+        student.branch.strip().lower() != job.eligible_branch.strip().lower()
+    ):
+            return jsonify({
+                'message': 'Your branch is not eligible for this job'
+            }), 403
+        
+    if job.eligible_year:
+        if student.graduation_year != job.eligible_year:
+            return jsonify({
+                'message': 'Your graduation year is not eligible'
+            }), 403
+
+
+    from datetime import datetime, timezone 
+
+    if job.application_deadline:
+        if datetime.now(timezone.utc) > job.application_deadline:
+            return jsonify({
+                'message': 'Application deadline has passed'
+            }), 400
+
+    if job.minimum_cgpa:
+        if not student.cgpa:
+            return jsonify({
+                'message': 'Please update CGPA in profile before applying'
+            }), 400
+
+        if student.cgpa < job.minimum_cgpa:
+            return jsonify({
+                'message': 'You do not meet CGPA requirement'
+            }), 400
+
+    if job.eligible_branch:
+        if student.branch.lower() != job.eligible_branch.lower():
+            return jsonify({
+                'message': 'your branch is not eligible'
+            }), 400
+
+    if job.eligible_year:
+        if student.graduation_year != job.eligible_year:
+            return jsonify({
+                'message': 'Your graduation year is not eligible'
+            }), 400
+
+    
     existing_application = Application.query.filter_by(
         student_id = student.id,
         job_id = job_id

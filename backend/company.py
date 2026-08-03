@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db 
+from app import db, cache
 from models import User, Company, Job, Application
 
 company_bp = Blueprint('company', __name__)
@@ -14,6 +14,9 @@ def get_current_company(user_id):
 def company_dashbaord():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
+
+    if not current_user:
+        return jsonify({'message': 'User not found'}), 404
 
     if current_user.role != 'company':
         return jsonify({'message': 'Company access required'}), 403
@@ -47,10 +50,12 @@ def create_job():
     if not company or not company.is_approved:
         return jsonify({'message': 'Company not approved yet'}), 403
     
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data.get('title'):
         return jsonify({'message': 'Job title is required'}), 400
+
+    from datetime import datetime
     
     job = Job(
         company_id = company.id,
@@ -59,10 +64,20 @@ def create_job():
         skills_required = data.get('skills_required', ''),
         salary = data.get('salary', 0),
         location = data.get('location', ''),
+        minimum_cgpa = data.get('minimum_cgpa'),
+        eligible_branch = data.get('eligible_branch'),
+        eligible_year = data.get('eligible_year'),
+        application_deadline = (
+            datetime.fromisoformat(data['application_deadline'])
+            if data.get('application_deadline')
+            else None
+        ),
         status = 'pending'
     )
     db.session.add(job)
     db.session.commit()
+
+    cache.delete('admin_stats')
 
     return jsonify({'message': 'Job posted successfully, awaiting admin approval'}), 201
 
@@ -136,7 +151,11 @@ def update_application_status(app_id):
         return jsonify({'message': 'Company access required'}), 403
     
     company = get_current_company(current_user_id)
-    data = request.get_json()
+    if not company or not company.is_approved:
+            return jsonify({
+                'message': 'Company not approved'
+            }), 403
+    data = request.get_json() or {}
 
     application = Application.query.get(app_id)
 
@@ -146,21 +165,49 @@ def update_application_status(app_id):
     if application.job.company_id != company.id:
         return jsonify({'message': 'Unauthorized'}), 403 
     
-    valid_statuses = ['applied', 'shortlisted', 'interview', 'selected', 'rejected']
+    valid_statuses = ['shortlisted', 'interview', 'selected', 'rejected']
+    new_status = data.get('status')
 
-    if data.get('status') not in valid_statuses:
-        return jsonify({'message': 'Invalid status'}), 400
+    if new_status not in valid_statuses:
+        return jsonify({
+            'message': 'Invalid status'
+        }), 400
+
+    current_status = application.status
+
+    allowed_transitions = {
+
+        'applied': ['shortlisted', 'rejected'],
+        'shortlisted': ['interview', 'rejected'],
+        'interview': ['selected', 'rejected'],
+        'selected': [],
+        'rejected':[]
+    }
+    if new_status not in allowed_transitions.get(current_status, []):
+        return jsonify({
+            'message': f'Cannot change status from {current_status} to {new_status}'
+        }), 400
     
-    application.status = data['status']
-    if data['status'] == 'selected':
+    
+    
+    if new_status == 'selected':
         from models import Placement
-        placement = Placement(
-            application_id = application.id,
-            student_id = application.student_id,
-            company_id = application.job.company_id,
-            salary = application.job.salary
-        )
-        db.session.add(placement)
+
+        existing_placement = Placement.query.filter_by(
+            application_id = application.id
+        ).first()
+
+        if not existing_placement:
+
+            placement = Placement(
+                application_id = application.id,
+                student_id = application.student_id,
+                company_id = application.job.company_id,
+                salary = application.job.salary
+            )
+            db.session.add(placement)
+
+    application.status = new_status
     application.notified = False
     db.session.commit()
 
@@ -176,7 +223,7 @@ def update_job_status(job_id):
         return jsonify({'message': 'Company access required'}), 403
     
     company = get_current_company(current_user_id)
-    data = request.get_json()
+    data = request.get_json() or {}
 
     job = Job.query.get(job_id)
 
@@ -204,13 +251,42 @@ def schedule_interview(app_id):
     
     company = get_current_company(current_user_id)
 
+    if not company or not company.is_approved:
+        return jsonify({
+            'message': 'Company not approved'
+        }), 403
+
     application = Application.query.get(app_id)
 
     if not application:
         return jsonify({'message': 'Application not found'}), 404
+
+    if application.job.company_id != company.id:
+        return jsonify({
+            'message': 'unauthorized'
+        }), 403
     
     if application.status != 'shortlisted':
         return jsonify({'message': 'Only shortlisted candidates can be scheduled for interview'}), 400
+
+    data = request.get_json() or {}
+
+    from datetime import datetime
+    from models import Interview
+
+    interview_date = datetime.fromisoformat(
+        data['interview_date']
+    )
+
+    interview = Interview(
+        application_id = application.id,
+        interview_date = interview_date,
+        mode = data.get('mode', 'online'),
+        meeting_link = data.get('meeting_link')
+    )
+
+    db.session.add(interview)
+
     
     application.status = 'interview'
     application.notified = False

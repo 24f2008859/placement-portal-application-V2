@@ -9,7 +9,7 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/auth/register/student', methods=['POST'])
 def register_student():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data:
         return jsonify({'message': 'No data provided'}), 400
@@ -20,30 +20,37 @@ def register_student():
     existing_user = User.query.filter_by(email=data['email']).first()
     if existing_user:
         return jsonify({'message': 'Email already registered'}), 409
-    
-    user = User(
-        email = data['email'],
-        password = generate_password_hash(data['password']),
-        role = 'student'
-    )
-    db.session.add(user)
-    db.session.commit()
-    from models import Student
-    student = Student(
-        user_id = user.id,
-        full_name = data.get('full_name', ''),
-        phone = data.get('phone', ''),
-        education = data.get('education', ''),
-        skills = data.get('skills', '')
-    )
-    db.session.add(student)
-    db.session.commit()
 
-    return jsonify({'message':'Student registered successfully'}), 201
+    
+    try:    
+        user = User(
+            email = data['email'],
+            password = generate_password_hash(data['password']),
+            role = 'student'
+        )
+        db.session.add(user)
+        db.session.flush()
+        from models import Student
+        student = Student(
+            user_id = user.id,
+            full_name = data.get('full_name', ''),
+            education = data.get('education', ''),
+            skills = data.get('skills', ''),
+            cgpa = data.get('cgpa'),
+            branch = data.get('branch'),
+            graduation_year = data.get('graduation_year')
+        )
+        db.session.add(student)
+        db.session.commit()
+        return jsonify({'message':'Student registered successfully'}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Registration failed'}), 500
 
 @auth_bp.route('/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data:
         return jsonify({'message': 'No data provided'}), 400
@@ -55,12 +62,36 @@ def login():
 
     if not user or not check_password_hash(user.password, data['password']):
         return jsonify({'message': 'Invalid email or password'}), 401
+
+    if user.role == 'student':
+        from models import Student
+
+        student = Student.query.filter_by(
+            user_id=user.id
+        ).first()
+
+        if student and not student.is_active:
+            return jsonify({
+                'message':'Student account deactivated'
+            }), 403
     
     if user.role == 'company':
         from models import Company
         company = Company.query.filter_by(user_id = user.id).first()
-        if not company or not company.is_approved:
-            return jsonify({'message': 'Company account pending admin approval'}), 403
+        if not company:
+            return jsonify({
+                'message': 'Company profile not found'
+            }),404
+
+        if not company.is_active:
+            return jsonify({
+                'message': 'Company account deactivated'
+            }), 403
+
+        if not company.is_approved:
+            return jsonify({
+                'message': 'Company account pending admin approval'
+            }), 403
     
     access_token = create_access_token(identity=str(user.id))
 
@@ -73,7 +104,7 @@ def login():
 
 @auth_bp.route('/auth/register/company', methods=['POST'])
 def register_company():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data:
         return jsonify({'message': "No data provided"}), 400
@@ -84,23 +115,37 @@ def register_company():
     existing_user = User.query.filter_by(email=data['email']).first()
     if existing_user:
         return jsonify({'message': 'Email already registered'}), 409
-    
-    user = User(
-        email = data['email'],
-        password = generate_password_hash(data['password']),
-        role = 'company'
-    )
-    db.session.add(user)
-    db.session.commit()
+
+    try:    
+        user = User(
+            email = data['email'],
+            password = generate_password_hash(data['password']),
+            role = 'company'
+        )
+        db.session.add(user)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({
+            'message': 'Company registration failed'
+        }), 500
 
     from models import Company
     company = Company(
         user_id = user.id, 
         name = data['name'],
         industry = data.get('industry', ''),
-        location = data.get('location', '')
+        location = data.get('location', ''),
+        website = data.get('website', '')
     )
-    db.session.add(company)
-    db.session.commit()
+
+    try:
+        db.session.add(company)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({
+            'message': 'Company profile creation failed'
+        }), 500
 
     return jsonify({'message': 'Company registered successfully, awaiting admin approval'}), 201
