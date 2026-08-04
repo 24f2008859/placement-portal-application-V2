@@ -22,7 +22,7 @@
               <div>
                 <p class="text-muted small mb-1">Total Students</p>
                 <h3 class="fw-bold mb-1">{{ stats.total_students }}</h3>
-                <p class="text-muted small mb-0">0 placed (0% rate)</p>
+                <p class="text-muted small mb-0">{{ stats.placed_students }} placed ({{ stats.placement_rate }}%)</p>
               </div>
               <span class="fs-4">👥</span>
             </div>
@@ -45,7 +45,7 @@
             <div class="d-flex justify-content-between align-items-start">
                <div>
                 <p class="text-muted small mb-1">Placement Drives</p>
-                <h3 class="fw-bold mb-1">{{ stats.total_jobs }}</h3>
+                <h3 class="fw-bold mb-1">{{ stats.pending_jobs }}</h3>
                 <p class="text-warning small mb-0">drives pending review</p>
               </div>
               <span class="fs-4">💼</span>
@@ -177,7 +177,7 @@
                     </span>
                   </td>
                   <td>
-                    <button class="btn btn-warning btn-sm me-2" @click="deactivateCompany(company.id)">Deactivate</button>
+                    <button class="btn btn-warning btn-sm" v-if="company.is_active" @click="deactivateCompany(company.id)">Deactivate</button>
                     <button class="btn btn-danger btn-sm" @click="removeCompany(company.id)">Remove</button>
                   </td>
                 </tr>
@@ -207,11 +207,11 @@
                   <td>{{ job.salary }}</td>
                   <td>
                     <span class="badge" :class="job.status === 'approved' ? 'bg-success' : job.status === 'pending' ? 'bg-warning' : 'bg-secondary'">
-                      {{ job.status }}
+                      {{ job.status.toUpperCase() }}
                     </span>
                   </td>
                   <td>
-                    <button class="btn btn-success btn-sm me-2" @click="approveJob(job.id)">Approve</button>
+                    <button class="btn btn-success btn-sm me-2" v-if="job.status==='pending'" @click="approveJob(job.id)">Approve</button>
                     <button class="btn btn-danger btn-sm" @click="removeJob(job.id)">Remove</button>
                   </td>
                 </tr>
@@ -229,9 +229,6 @@
               <div class="col-md-3">
                 <input type="text" class="form-control" placeholder="Search by ID" v-model="studentSearch.id">
               </div>
-              <div class="col-md-3">
-                <input type="text" class="form-control" placeholder="Search by phone" v-model="studentSearch.phone">
-              </div>
               <div class="col-md-2">
                 <button class="btn btn-primary w-100" @click="searchStudents">Search</button>
               </div>
@@ -241,7 +238,6 @@
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Phone</th>
                   <th>Education</th>
                   <th>Skills</th>
                   <th>Status</th>
@@ -252,7 +248,6 @@
                 <tr v-for="student in searchedStudents" :key="student.id">
                   <td>{{ student.id }}</td>
                   <td>{{ student.full_name }}</td>
-                  <td>{{ student.phone }}</td>
                   <td>{{ student.education }}</td>
                   <td>{{ student.skills }}</td>
                   <td>
@@ -262,7 +257,7 @@
                   </td>
                   <td>
                     <button class="btn btn-info btn-sm me-2 text-white" @click="viewStudentHistory(student.id)">View</button>
-                    <button class="btn btn-warning btn-sm" @click="deactivateStudent(student.id)">Deactivate</button>
+                    <button class="btn btn-warning btn-sm" v-if="student.is_active" @click="deactivateStudent(student.id)">Deactivate</button>
                   </td>
                 </tr>
               </tbody>
@@ -272,7 +267,7 @@
             <div class="card border-0 bg-light mt-4" v-if="selectedStudent">
               <div class="card-body">
                 <h5 class="fw-bold">{{ selectedStudent.full_name }} — Application History</h5>
-                <p class="text-muted small">{{ selectedStudent.email }} • {{ selectedStudent.phone }}</p>
+                <p class="text-muted small">{{ selectedStudent.email }}</p>
                 <table class="table table-sm">
                   <thead>
                     <tr>
@@ -354,8 +349,7 @@ export default {
             searchedCompanies: [],
             studentSearch: {
             name: '',
-            id: '',
-            phone: ''
+            id: ''
             },
             searchedStudents: [],
             allJobs:[],
@@ -447,7 +441,7 @@ export default {
         async searchStudents() {
             const token = localStorage.getItem('token')
             const response = await fetch(
-                `http://127.0.0.1:5000/admin/students/search?name=${this.studentSearch.name}&id=${this.studentSearch.id}&phone=${this.studentSearch.phone}`,
+                `http://127.0.0.1:5000/admin/students/search?name=${this.studentSearch.name}&id=${this.studentSearch.id}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`

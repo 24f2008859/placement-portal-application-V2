@@ -64,9 +64,17 @@ def create_job():
         skills_required = data.get('skills_required', ''),
         salary = data.get('salary', 0),
         location = data.get('location', ''),
-        minimum_cgpa = data.get('minimum_cgpa'),
+        minimum_cgpa = (
+            float(data['minimum_cgpa'])
+            if data.get('minimum_cgpa')
+            else None
+        ),
         eligible_branch = data.get('eligible_branch'),
-        eligible_year = data.get('eligible_year'),
+        eligible_year = (
+            int(data['eligible_year'])
+            if data.get('eligible_year')
+            else None
+        ),
         application_deadline = (
             datetime.fromisoformat(data['application_deadline'])
             if data.get('application_deadline')

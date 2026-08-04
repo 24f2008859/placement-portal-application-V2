@@ -143,6 +143,7 @@ export default {
             finally {
                 this.loading = false
             }
+        }
     }
 }
 </script>

@@ -130,16 +130,24 @@
                 <input type="text" class="form-control" v-model="profile.full_name">
               </div>
               <div class="col-md-6 mb-3">
-                <label class="form-label">Phone</label>
-                <input type="text" class="form-control" v-model="profile.phone">
-              </div>
-              <div class="col-md-6 mb-3">
                 <label class="form-label">Education</label>
                 <input type="text" class="form-control" v-model="profile.education">
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label">Skills</label>
                 <input type="text" class="form-control" v-model="profile.skills">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">CGPA</label>
+                <input type="number" step="0.01" class="form-control" v-model="profile.cgpa">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Branch</label>
+                <input type="text" class="form-control" v-model="profile.branch">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="form-label">Graduation Year</label>
+                <input type="number" class="form-control" v-model="profile.graduation_year">
               </div>
               <div class="col-md-12 mb-3">
                 <label class="form-label">Resume (PDF, DOC, DOCX)</label>
@@ -168,7 +176,8 @@
                   <th>Company</th>
                   <th>Job Title</th>
                   <th>Salary</th>
-                  <th>Date</th>
+                  <th>Joining Date</th>
+                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,6 +185,7 @@
                   <td>{{ placement.company }}</td>
                   <td>{{ placement.job_title }}</td>
                   <td>{{ placement.salary }}</td>
+                  <td>{{ placement.joining_date }}</td>
                   <td>{{ placement.created_at }}</td>
                 </tr>
               </tbody>
@@ -200,9 +210,12 @@ export default {
         return{
             profile: {
                 full_name: '',
-                phone: '',
                 education: '',
-                skills: ''
+                skills: '',
+                cgpa: '',
+                branch: '',
+                graduation_year: '',
+                resume: ''
             },
             jobs: [],
             applications: [],
@@ -257,7 +270,7 @@ export default {
         async searchJobs() {
             const token = localStorage.getItem('token')
             const response = await fetch(
-                `http://127.0.0.1:5000/student/jobs?search=${this.searchQuery}`,
+                `http://127.0.0.1:5000/student/jobs?search=${encodeURIComponent(this.searchQuery)}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -351,11 +364,6 @@ export default {
                 this.exportMessage = 'Still processing...'
                 setTimeout(() => this.checkExportStatus(), 3000)
             }
-        },
-        logout() {
-            localStorage.removeItem('token')
-            localStorage.removeItem('role')
-            this.$router.push('/login')
         }
     }
 }

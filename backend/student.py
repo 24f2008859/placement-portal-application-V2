@@ -192,7 +192,7 @@ def apply_job(job_id):
                 'message': 'You do not meet the minimum CGPA requirement'
             }), 403
 
-    if job.eligibile_branch:
+    if job.eligible_branch:
         if (
         student.branch is None or
         student.branch.strip().lower() != job.eligible_branch.strip().lower()

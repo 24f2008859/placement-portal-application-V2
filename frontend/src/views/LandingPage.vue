@@ -3,7 +3,7 @@
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
-                <a class="navbar-brand fw-bold">PlaceMe</a>
+                <router-link to="/" class="navbar-brand fw-bold">PlaceMe</router-link>
                 <div class="ms-auto">
                     <router-link to="/login" class="btn btn-light me-2">Login</router-link>
                     <router-link to="/register" class="btn btn-outline-light">Register</router-link>
@@ -28,19 +28,19 @@
             <div class="row text-center">
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm p-4">
-                        <h2 class="text-primary fw-bold">{{ stats.total_students }}+</h2>
+                        <h2 class="text-primary fw-bold">{{ loadingStats ? '...' : stats.total_students + '+' }}</h2>
                         <p class="text-muted">Students Registered</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm p-4">
-                        <h2 class="text-primary fw-bold">{{ stats.total_companies }}+</h2>
-                        <p class="text-muted">Companies Onboard</p>
+                        <h2 class="text-primary fw-bold">{{ loadingStats ? '...' : stats.total_companies + '+' }}</h2>
+                        <p class="text-muted">Partner Companies</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm p-4">
-                        <h2 class="text-primary fw-bold">{{ stats.total_jobs }}+</h2>
+                        <h2 class="text-primary fw-bold">{{ loadingStats ? '...' : stats.total_jobs + '+' }}</h2>
                         <p class="text-muted">Placement Drives</p>
                     </div>
                 </div>
@@ -94,7 +94,8 @@ export default {
                 total_students: 0,
                 total_companies: 0,
                 total_jobs: 0
-            }
+            },
+            loadingStats: true 
         }
     },
     mounted() {
@@ -102,9 +103,21 @@ export default {
     },
     methods: {
         async fetchStats() {
-            const response = await fetch('http://127.0.0.1:5000/public/stats')
-            const data = await response.json()
-            this.stats = data 
+            try {
+                const response = await fetch('http://127.0.0.1:5000/public/stats')
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch stats')
+                }
+
+                const data = await response.json()
+                this.stats = data
+
+            } catch(error) {
+                console.log(error)
+            } finally{
+                this.loadingStats = false 
+            }
         }
     }
 }

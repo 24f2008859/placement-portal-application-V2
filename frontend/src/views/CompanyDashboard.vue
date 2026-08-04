@@ -7,7 +7,7 @@
       <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
           <h3 class="fw-bold mb-1">{{ companyName }}
-            <span class="badge bg-success ms-2" style="font-size: 0.6rem;">APPROVED</span>
+            <span class="badge" :class="companyApproved ? 'bg-success':'bg-warning'">{{ companyApproved ? 'APPROVED': 'PENDING' }}</span>
           </h3>
           <p class="text-muted small mb-0">Company Portal • Placement Drives Management</p>
         </div>
@@ -51,7 +51,19 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Salary</label>
-              <input type="number" class="form-control" placeholder="Salary" v-model="newJob.salary">
+              <input type="number" class="form-control" placeholder="e.g. in lpa, in p.m." v-model="newJob.salary">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Eligible Branch</label>
+              <input type="text" class="form-control" v-model="newJob.eligible_branch">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Eligible Graduation Year</label>
+              <input type="number" class="form-control" v-model="newJob.eligible_year">
+            </div>
+            <div class="col-md-12 mb-3">
+              <label>Application Deadline</label>
+              <input type="date" class="form-control" v-model="newJob.application_deadline">
             </div>
             <div class="col-md-12 mb-3">
               <label class="form-label">Job Description</label>
@@ -141,6 +153,7 @@ export default {
     data() {
         return {
             companyName: '',
+            companyApproved: false,
             totalJobs: 0,
             totalApplications: 0,
             jobs: [],
@@ -151,6 +164,10 @@ export default {
                 skills_required: '',
                 salary: '',
                 location: '',
+                minimum_cgpa: '',
+                eligible_branch: '',
+                eligible_year: '',
+                application_deadline: ''
             },
             showJobForm: false,
             selectedJob: null
@@ -172,6 +189,7 @@ export default {
             this.companyName = data.company_name
             this.totalJobs = data.total_jobs
             this.totalApplications = data.total_applications
+            this.companyApproved = data.is_approved
         },
         async fetchJobs() {
             const token = localStorage.getItem('token')
@@ -184,64 +202,69 @@ export default {
             this.jobs = data
         },
         async postJob() {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://127.0.0.1:5000/company/jobs`, {
-                method: 'POST',
-                headers: {
-                    'Content_type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(this.newjob)
-            })
-            const data = await response.json()
-            alert(data.message)
-            this.newJob = { title: '', description: '', skills_required: '', salary: '', location: ''}
-            this.fetchJobs()
-            this.fetchDashboard()
+          const token = localStorage.getItem('token')
+          const response = await fetch(`http://127.0.0.1:5000/company/jobs`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(this.newJob)
+          })
+          const data = await response.json()
+          alert(data.message)
+          this.newJob = { 
+              title: '', 
+              description: '', 
+              skills_required: '', 
+              salary: '', 
+              location: '', 
+              minimum_cgpa: '',
+              eligible_branch: '',
+              eligible_year: '',
+              application_deadline: ''
+            }
+          this.fetchJobs()
+          this.fetchDashboard()
         }, 
         async viewApplications(jobId) {
-            this.selectedJob = this.jobs.find(j => j.id === jobId)
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://127.0.0.1:5000/company/jobs/${jobId}/applications`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            const data = await response.json()
-            this.selectedJobApplications = data
+          this.selectedJob = this.jobs.find(j => j.id === jobId)
+          const token = localStorage.getItem('token')
+          const response = await fetch(`http://127.0.0.1:5000/company/jobs/${jobId}/applications`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          const data = await response.json()
+          this.selectedJobApplications = data
         },
         async updateStatus(appId, status) {
-            const token = localStorage.getItem('token')
-            const reponse = await fetch(`http://127.0.0.1:5000/company/applications/${appId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({status: status})
-            })
-            const data = await response.json()
-            alert(data.message)
-            this.selectedJobApplications = []
+          const token = localStorage.getItem('token')
+          const reponse = await fetch(`http://127.0.0.1:5000/company/applications/${appId}/status`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({status: status})
+          })
+          const data = await response.json()
+          alert(data.message)
+          this.viewApplications(this.selectedJob.id)
         },
         async closeJob(jobId) {
-            const token = localStorage.getItem('token')
-            const response = await fetch(`http://127.0.0.1:5000/company/jobs/${jobId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: 'closed'})
-            })
-            const data = await response.json()
-            alert(data.message)
-            this.fetchJobs()
-        },
-        logout() {
-            localStorage.removeItem('token')
-            localStorage.removeItem('role')
-            this.$router.push('/login')
+          const token = localStorage.getItem('token')
+          const response = await fetch(`http://127.0.0.1:5000/company/jobs/${jobId}/status`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ status: 'closed'})
+          })
+          const data = await response.json()
+          alert(data.message)
+          this.fetchJobs()
         }
     }
 } 

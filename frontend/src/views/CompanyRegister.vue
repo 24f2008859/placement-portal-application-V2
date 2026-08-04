@@ -28,7 +28,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Password *</label>
-                                <input type="password" class="form-control" v-model="form.password" placeholder="Min 6 characters">
+                                <input type="password" class="form-control" v-model="form.password" placeholder="Min 6 characters" @keyup.enter="register">
                                 <div class="text-danger small" v-if="errors.password">{{ errors.password }}</div>
                             </div>
 
@@ -52,7 +52,7 @@
                             <div class="text-danger mb-3" v-if="errorMessage">{{ errorMessage }}</div>
                             <div class="text-success mb-3" v-if="successMessage">{{ successMessage }}</div>
 
-                            <button class="btn btn-primary w-100" @click="register">Register</button>
+                            <button class="btn btn-primary w-100" @click="register" :disabled="loading">Register</button>
                             <p class="text-center mt-3">Already have an account? <router-link to="/login">Login</router-link></p>
                         </div>
                     </div>
@@ -77,7 +77,8 @@ export default {
             },
             errors: {},
             errorMessage: '',
-            successMessage: ''
+            successMessage: '',
+            loading: false
         }
     },
     methods: {
@@ -101,22 +102,39 @@ export default {
             return Object.keys(this.errors).length === 0
         },
         async register() {
-            if (!this.validate()) return 
+            if (!this.validate()) return
 
-            const response = await fetch('http://127.0.0.1:5000/auth/register/company', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(this.form)
-            })
-            const data = await response.json()
+            this.errorMessage = ''
+            this.successMessage = ''
+            this.loading = true
 
-            if (response.ok) {3
-                this.successMessage = 'Registration successful! Awaiting admin approval.'
-                setTimeout(() => this.$router.push('/login'), 2000)
-            } else {
-                this.errorMessage = data.message
+            try {
+                const response = await fetch('http://127.0.0.1:5000/auth/register/company', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(this.form)
+                })
+
+                const data = await response.json()
+
+                if (response.ok) {
+                    this.successMessage = 'Registration successful! Awaiting admin approval.'
+
+                    setTimeout(() => {
+                        this.$router.push('/login')
+                    }, 2000)
+
+                } else {
+                    this.errorMessage = data.message || 'Registration failed.'
+                }
+
+            } catch(error) {
+                this.errorMessage = 'Unable to connect to server.'
+            }
+            finally {
+                this.loading = false
             }
         }
     }

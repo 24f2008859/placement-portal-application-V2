@@ -25,7 +25,7 @@
                             <div class="card border-0 shadow-sm p-4 h-100">
                                 <div class="fs-1 mb-3">🏢</div>
                                 <h5 class="fw-bold">Company</h5>
-                                <p class="text-muted small">Register your company to post placement</p>
+                                <p class="text-muted small">Register your company to post placement opportunities</p>
                                 <router-link to="/register/company" class="btn btn-primary mt-2">Register as Company</router-link>
                             </div>
                         </div>
