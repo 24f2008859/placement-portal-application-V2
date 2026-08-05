@@ -16,12 +16,13 @@ cache = Cache()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+
+     
     mail.init_app(app)
-
-    cache.init_app(app) 
-
     db.init_app(app)
     jwt.init_app(app)
+    cache.init_app(app)
     CORS(app)
 
     from auth import auth_bp

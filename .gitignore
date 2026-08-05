@@ -7,3 +7,5 @@ instance/
 # Vue / Node
 node_modules/
 dist/
+backend/static/exports/
+backend/static/resumes/

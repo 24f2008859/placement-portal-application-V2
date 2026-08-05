@@ -76,7 +76,6 @@ def update_profile():
 
 @student_bp.route('/student/jobs', methods=['GET'])
 @jwt_required()
-@cache.cached(timeout=300, key_prefix='approved_jobs')
 def get_approved_jobs():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
@@ -174,7 +173,7 @@ def apply_job(job_id):
     if not student or not student.is_active:
         return jsonify({
             'message': 'Student account inactive'
-        })
+        }), 403
 
     job = Job.query.get(job_id)
     if not job:
@@ -192,6 +191,8 @@ def apply_job(job_id):
                 'message': 'You do not meet the minimum CGPA requirement'
             }), 403
 
+    
+
     if job.eligible_branch:
         if (
         student.branch is None or
@@ -201,17 +202,14 @@ def apply_job(job_id):
                 'message': 'Your branch is not eligible for this job'
             }), 403
         
-    if job.eligible_year:
-        if student.graduation_year != job.eligible_year:
-            return jsonify({
-                'message': 'Your graduation year is not eligible'
-            }), 403
 
 
     from datetime import datetime, timezone 
 
     if job.application_deadline:
-        if datetime.now(timezone.utc) > job.application_deadline:
+        from datetime import datetime, timezone
+        deadline = job.application_deadline.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > deadline:
             return jsonify({
                 'message': 'Application deadline has passed'
             }), 400
@@ -346,4 +344,14 @@ def check_export_status(task_id):
         return jsonify({'status': 'failed', 'message': 'Export failed'}), 500
 
 
+@student_bp.route('/student/export/download/<filename>', methods=['GET'])
+def download_export(filename):
+    from flask import send_file
+    import os
 
+    filepath = os.path.join('static', 'exports', filename)
+
+    if not os.path.exists(filepath):
+        return jsonify({'message': 'File not found'}), 404
+
+    return send_file(filepath, as_attachment=True, download_name=filename)

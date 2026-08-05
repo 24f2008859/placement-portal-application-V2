@@ -240,7 +240,7 @@ export default {
         },
         async updateStatus(appId, status) {
           const token = localStorage.getItem('token')
-          const reponse = await fetch(`http://127.0.0.1:5000/company/applications/${appId}/status`, {
+          const response = await fetch(`http://127.0.0.1:5000/company/applications/${appId}/status`, {
               method: 'PUT',
               headers: {
                   'Content-Type': 'application/json',

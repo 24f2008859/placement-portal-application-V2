@@ -67,13 +67,18 @@ def dashboard_stats():
     total_jobs = Job.query.count()
     total_applications = Application.query.count()
     total_placements = Placement.query.count()
+    pending_jobs = Job.query.filter_by(status='pending').count()
+    placed_students = Placement.query.count()
+    placement_rate = round((placed_students / total_students * 100), 1) if total_students > 0 else 0
 
     return jsonify({
         'total_students': total_students,
         'total_companies': total_companies,
         'total_jobs': total_jobs,
         'total_applications': total_applications,
-        'total_placements': total_placements
+        'total_placements': total_placements,
+        'placed_students': placed_students,
+        'placement_rate': placement_rate
     }), 200
 
 @admin_bp.route('/admin/companies/<int:company_id>/remove', methods=['DELETE'])

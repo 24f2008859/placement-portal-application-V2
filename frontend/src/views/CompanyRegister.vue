@@ -52,7 +52,7 @@
                             <div class="text-danger mb-3" v-if="errorMessage">{{ errorMessage }}</div>
                             <div class="text-success mb-3" v-if="successMessage">{{ successMessage }}</div>
 
-                            <button class="btn btn-primary w-100" @click="register" :disabled="loading">Register</button>
+                            <button class="btn btn-primary w-100" @click="register" :disabled="loading">{{ loading ? 'Registering...' : 'Register' }}</button>
                             <p class="text-center mt-3">Already have an account? <router-link to="/login">Login</router-link></p>
                         </div>
                     </div>

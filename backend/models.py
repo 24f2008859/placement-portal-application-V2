@@ -100,7 +100,7 @@ class Interview(db.Model):
         default = 'online'
     )
 
-    meeting_link = db.column(db.String(300))
+    meeting_link = db.Column(db.String(300))
 
     created_at = db.Column(
         db.DateTime,

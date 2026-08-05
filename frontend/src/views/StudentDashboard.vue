@@ -26,6 +26,12 @@
             </div>
           </div>
           <p class="text-success small mt-2" v-if="exportMessage">{{ exportMessage }}</p>
+          <a v-if="exportFilename"
+              :href="`http://127.0.0.1:5000/student/export/download/${exportFilename}`"
+              class="btn btn-success btn-sm ms-2"
+              target="_blank">
+              ⬇️ Download CSV
+            </a>
         </div>
       </div>
 
@@ -223,6 +229,7 @@ export default {
             resumeFile: null,
             placements: [],
             exportMessage: '',
+            exportFilename: '',
             exportTaskId: '',
             activeTab: 'jobs'
         }
@@ -359,7 +366,8 @@ export default {
             })
             const data = await response.json()
             if (data.status === 'complete') {
-                this.exportMessage = `Export complete! File: ${data.filename}`
+                this.exportMessage = `Export complete!`
+                this.exportFilename = data.filename
             } else if (data.status === 'pending') {
                 this.exportMessage = 'Still processing...'
                 setTimeout(() => this.checkExportStatus(), 3000)
