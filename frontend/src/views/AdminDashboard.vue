@@ -95,6 +95,9 @@
                 All Applications
               </button>
             </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activeTab === 'charts' }" @click="activeTab = 'charts'; loadCharts()"> 📈 Analytics</button>
+            </li>
           </ul>
         </div>
 
@@ -319,13 +322,34 @@
             </table>
           </div>
 
+          <!-- Charts Tab -->
+          <div v-if="activeTab === 'charts'">
+            <h5 class="fw-bold mb-4">Placement Analytics</h5>
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm p-3">
+                  <h6 class="fw-bold mb-3">Applications per Company</h6>
+                  <canvas id="companyChart"></canvas>
+                </div>
+              </div>
+              <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm p-3">
+                  <h6 class="fw-bold mb-3">Application Status Distribution</h6>
+                  <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
+
 <script>
+import { Chart, registerables } from 'chart.js'
+Chart.register(...registerables)
 import NavBar from '../components/NavBar.vue';
 
 export default {
@@ -356,7 +380,10 @@ export default {
             allApplications: [],
             selectedStudent: null,
             selectedStudentApplications: [],
-            activeTab: 'overview'
+            activeTab: 'overview',
+            chartData: null,
+            companyChart: null,
+            statusChart: null
         }
         
     },
@@ -539,7 +566,68 @@ export default {
           })
           const data = await response.json()
           alert(data.message)
-        }
+        },
+        async loadCharts() {
+          const token = localStorage.getItem('token')
+          const response = await fetch('http://127.0.0.1:5000/admin/charts/data', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          const data = await response.json()
+          this.chartData = data
+
+          await this.$nextTick()
+
+          if (this.companyChart) this.companyChart.destroy()
+          if (this.statusChart) this.statusChart.destroy()
+
+          const companyCtx = document.getElementById('companyChart')
+          this.companyChart = new Chart(companyCtx, {
+            type: 'bar',
+            data: {
+              labels: data.company_labels,
+              datasets: [{
+                label: 'Applications',
+                data: data.company_data,
+                backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                borderColor: 'rgba(37, 99, 235, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          })
+
+          const statusCtx = document.getElementById('statusChart')
+          this.statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+              labels: data.status_labels,
+              datasets: [{
+                data: data.status_data,
+                backgroundColor: [
+                  '#6c757d',
+                  '#ffc107', 
+                  '#0d6efd',
+                  '#198754',
+                  '#dc3545'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                }
+              }
+            }
+          })
+        },
     }
 }
 </script>

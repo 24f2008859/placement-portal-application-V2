@@ -401,3 +401,38 @@ def generate_report():
     send_monthly_report.delay()
     
     return jsonify({'message': 'Monthly report generation triggered successfully'}), 200
+
+@admin_bp.route('/admin/charts/data', methods=['GET'])
+@jwt_required()
+def get_chart_data():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Admin access required'}), 403
+
+    from models import Application, Company, Job
+
+    #Application per company
+    companies = Company.query.filter_by(is_approved=True).all()
+    company_labels = []
+    company_data = []
+
+    for company in companies:
+        total = Application.query.join(Job).filter(Job.company_id == company.id).count()
+        company_labels.append(company.name)
+        company_data.append(total)
+
+    # Application status distribution
+    statuses = ['applied', 'interview', 'selected', 'rejected']
+    status_data = []
+    for status in statuses:
+        count = Application.query.filter_by(status=status).count()
+        status_data.append(count)
+
+    return jsonify({
+        'company_labels': company_labels,
+        'company_data': company_data,
+        'status_labels': statuses,
+        'status_data': status_data
+    }), 200
