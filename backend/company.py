@@ -89,6 +89,53 @@ def create_job():
 
     return jsonify({'message': 'Job posted successfully, awaiting admin approval'}), 201
 
+@company_bp.route('/company/jobs/<int:job_id>', methods=['PUT'])
+@jwt_required()
+def update_job(job_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'company':
+        return jsonify({'message': 'Company access required'}), 403
+
+    company = get_current_company(current_user_id)
+
+    if not company or not company.is_approved:
+        return jsonify({'message': 'Company not approved yet'}), 403
+    job = Job.query.get(job_id)
+
+    if not job or job.company_id != company.id:
+        return jsonify({'message': 'job not found'})
+
+    data = request.get_json() or {}
+    if not data.get('title'):
+        return jsonify({'message': 'Job title is required'}), 400
+
+    from datetime import datetime
+
+    job.title = data['title']
+    job.description = data.get('description', '')
+    job.skills_required = data.get('skills_required', '')
+    job.salary = data.get('salary', 0)
+    job.location = data.get('location', '')
+
+    job.minimum_cgpa = (
+        float(data['minimum_cgpa'])
+        if data.get('minimum_cgpa')
+        else None
+    )
+    job.application_deadline = (
+        datetime.fromisoformat(data['application_deadline'])
+        if data.get('application_deadline')
+        else None 
+    )
+    job.status = 'pending'
+    db.session.commit()
+    cache.delete('admin_stats')
+    return jsonify({
+        'message': 'Placement drive updated successfully. Awaiting admin approval.'
+    }), 200
+
 @company_bp.route('/company/jobs', methods=['GET'], endpoint='get_company_jobs')
 @jwt_required()
 def get_company_jobs():
@@ -114,6 +161,14 @@ def get_company_jobs():
             'skills_required': job.skills_required,
             'salary': job.salary,
             'location': job.location,
+            'minimum_cgpa': job.minimum_cgpa,
+            'eligible_branch': job.eligible_branch,
+            'eligible_year': job.eligible_year,
+            'application_deadline': (
+                job.application_deadline.isoformat()
+                if job.application_deadline
+                else ''
+            ),
             'status': job.status,
             'total_applications': len(job.applications)
         })

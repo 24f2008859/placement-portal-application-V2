@@ -3,6 +3,14 @@
     <NavBar />
 
     <div class="container-fluid px-4 py-4">
+      <div v-if="successMessage" class="alert alert-success alert-dismissible fade show">
+        {{ successMessage }}
+        <button type="button" class="btn-close" @click="successMessage = ''"></button>
+      </div>
+      <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" @click="errorMessage = ''"></button>
+      </div>
       <!-- Profile Header -->
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
@@ -139,7 +147,14 @@
                 <label class="form-label">Education</label>
                 <input type="text" class="form-control" v-model="profile.education">
               </div>
-              <div class="col-md-6 mb-3">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Branch</label>
+                <select class="form-select" v-model="profile.branch">
+                  <option value="">Select Branch</option>
+                  <option v-for="branch in branches" :key="branch" :value="branch">{{ branch }}</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
                 <label class="form-label">Skills</label>
                 <input type="text" class="form-control" v-model="profile.skills">
               </div>
@@ -147,10 +162,7 @@
                 <label class="form-label">CGPA</label>
                 <input type="number" step="0.01" class="form-control" v-model="profile.cgpa">
               </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Branch</label>
-                <input type="text" class="form-control" v-model="profile.branch">
-              </div>
+              
               <div class="col-md-4 mb-3">
                 <label for="form-label">Graduation Year</label>
                 <input type="number" class="form-control" v-model="profile.graduation_year">
@@ -231,7 +243,10 @@ export default {
             exportMessage: '',
             exportFilename: '',
             exportTaskId: '',
-            activeTab: 'jobs'
+            activeTab: 'jobs',
+            branches: [],
+            successMessage: '',
+            errorMessage: ''
         }
     },
     mounted() {
@@ -239,6 +254,7 @@ export default {
         this.fetchJobs()
         this.fetchApplications()
         this.fetchPlacements()
+        this.fetchBranches()
     },
     methods: {
         async fetchProfile() {
@@ -262,7 +278,13 @@ export default {
                 body: JSON.stringify(this.profile)
             })
             const data = await response.json()
-            alert(data.message)
+            if (response.ok) {
+              this.successMessage = data.message
+              this.errorMessage = ''
+            } else {
+                this.errorMessage = data.message
+                this.successMessage = ''
+            }
         },
         async fetchJobs() {
             const token = localStorage.getItem('token')
@@ -296,9 +318,16 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
-            this.fetchJobs()
-            this.fetchApplications()
+            if (response.ok) {
+              this.successMessage = data.message
+              this.errorMessage = ''
+              this.fetchJobs()
+              this.fetchApplications()
+            } else {
+              this.errorMessage = data.message
+              this.successMessage = ''
+            }
+            
         },
         async fetchApplications() {
             const token = localStorage.getItem('token')
@@ -330,8 +359,15 @@ export default {
                 body: formData
             })
             const data = await response.json()
-            alert(data.message)
-            this.fetchProfile()
+            if (response.ok) {
+              this.successMessage = data.message
+              this.errorMessage = ''
+              this.fetchProfile()
+            } else {
+              this.errorMessage = data.message
+              this.successMessage = ''
+            }
+            
         },
         async fetchPlacements() {
             const token = localStorage.getItem('token')
@@ -372,6 +408,10 @@ export default {
                 this.exportMessage = 'Still processing...'
                 setTimeout(() => this.checkExportStatus(), 3000)
             }
+        },
+        async fetchBranches() {
+          const response = await fetch('http://127.0.0.1:5000/public/branches')
+          this.branches = await response.json()
         }
     }
 }

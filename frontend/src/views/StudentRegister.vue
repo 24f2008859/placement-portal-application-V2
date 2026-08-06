@@ -45,7 +45,10 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Branch</label>
-                                <input type="text" class="form-control" v-model="form.branch" placeholder="e.g. Data Science">
+                                <select class="form-select" v-model="form.branch">
+                                    <option value="">Select Branch</option>
+                                    <option v-for="branch in branches" :key="branch" :value="branch">{{ branch }}</option>
+                                </select>
                             </div>
 
                             <div class="mb-3">
@@ -91,8 +94,12 @@ export default {
             errors: {},
             errorMessage: '',
             successMessage: '',
-            loading: false
+            loading: false,
+            branches: []
         }
+    },
+    mounted()  {
+        this.fetchBranches()
     },
     methods: {
         validate() {
@@ -143,6 +150,10 @@ export default {
             finally {
                 this.loading = false
             }
+        },
+        async fetchBranches() {
+            const response = await fetch('http://127.0.0.1:5000/public/branches')
+            this.branches = await response.json()
         }
     }
 }

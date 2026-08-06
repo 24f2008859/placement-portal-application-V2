@@ -3,6 +3,14 @@
     <NavBar />
 
     <div class="container-fluid px-4 py-4">
+      <div v-if="successMessage" class="alert alert-success alert-dismissible fade show">
+        {{ successMessage }}
+        <button type="button" class="btn-close" @click="successMessage= ''"></button>
+      </div>
+      <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" @click="errorMessage= ''"></button>
+      </div>
       <!-- Header -->
       <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
@@ -51,11 +59,18 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Salary</label>
-              <input type="number" class="form-control" placeholder="e.g. in lpa, in p.m." v-model="newJob.salary">
+              <input type="number" class="form-control" placeholder="in p.m." v-model="newJob.salary">
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Minimum CGPA</label>
+              <input type="number" step="0.1" class="form-control" placeholder="e.g. 8.0" v-model="newJob.minimum_cgpa">
+            </div>
+            <div class="col-md-6 mb-3">
               <label class="form-label">Eligible Branch</label>
-              <input type="text" class="form-control" v-model="newJob.eligible_branch">
+              <select class="form-select" v-model="newJob.eligible_branch">
+                <option value="">All Branches</option>
+                <option v-for="branch in branches" :key="branch" :value="branch">{{ branch }}</option>
+              </select>
             </div>
             <div class="col-md-4 mb-3">
               <label class="form-label">Eligible Graduation Year</label>
@@ -77,6 +92,54 @@
         </div>
       </div>
 
+      <!-- Edit Job Form -->
+      <div class="card border-0 shadow-sm mb-4" v-if="showEditForm">
+        <div class="card-body">
+          <h5 class="fw-bold mb-3">Edit Placement Drive</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Job Tiltle *</label>
+              <input type="text" class="form-control" v-model="editingJob.title">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" v-model="editingJob.location">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Skills Required</label>
+              <input type="text" class="form-control" v-model="editingJob.skills_required">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Salary</label>
+              <input type="number" class="form-control" v-model="editingJob.salary">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Minimum CGPA</label>
+              <input type="number" step="0.1" class="form-control" v-model="editingJob.minimum_cgpa">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Eligible Branch</label>
+              <input type="text" class="form-control" v-model="editingJob.eligible_branch">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Eligible Year</label>
+              <input type="text" class="form-control" v-model="editingJob.eligible_year">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Application Deadline</label>
+              <input type="date" class="form-control" v-model="editingJob.application_deadline">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" v-model="editingJob.description"></textarea>
+            </div>
+            <div class="col-md-12">
+              <button class="btn btn-primary me-2" @click="submitEdit">Update Drive</button>
+              <button class="btn btn-outline-secondary" @click="showEditForm = false">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Main Content -->
       <div class="row">
         <!-- Jobs List -->
@@ -97,6 +160,9 @@
                 </div>
                 <p class="text-muted small mb-1">Salary: {{ job.salary }} LPA</p>
                 <p class="text-muted small mb-0">Applicants: {{ job.total_applications }}</p>
+                <div class="d-flex gap-2 mt-2">
+                  <button class="btn btn-warning btn-sm" v-if="job.status === 'approved'" @click="closeJob(job.id)">Close Drive</button>
+                </div>
               </div>
             </div>
           </div>
@@ -169,13 +235,19 @@ export default {
                 eligible_year: '',
                 application_deadline: ''
             },
+            branches: [],
             showJobForm: false,
-            selectedJob: null
+            selectedJob: null,
+            successMessage: '',
+            errorMessage: '',
+            showEditForm: false,
+            editingJob: {}
         }
     },
     mounted() {
         this.fetchDashboard()
         this.fetchJobs()
+        this.fetchBranches()
     }, 
     methods: {
         async fetchDashboard() {
@@ -212,21 +284,29 @@ export default {
               body: JSON.stringify(this.newJob)
           })
           const data = await response.json()
-          alert(data.message)
-          this.newJob = { 
-              title: '', 
-              description: '', 
-              skills_required: '', 
-              salary: '', 
-              location: '', 
-              minimum_cgpa: '',
-              eligible_branch: '',
-              eligible_year: '',
-              application_deadline: ''
-            }
-          this.fetchJobs()
-          this.fetchDashboard()
-        }, 
+          if (response.ok) {
+            this.successMessage = data.message
+            this.errorMessage = ''
+          
+            this.newJob = { 
+                title: '', 
+                description: '', 
+                skills_required: '', 
+                salary: '', 
+                location: '', 
+                minimum_cgpa: '',
+                eligible_branch: '',
+                eligible_year: '',
+                application_deadline: ''
+              }
+            this.fetchJobs()
+            this.fetchDashboard()
+            this.showJobForm = false
+        } else {
+            this.errorMessage = data.message
+            this.successMessage = ''
+          }
+        },
         async viewApplications(jobId) {
           this.selectedJob = this.jobs.find(j => j.id === jobId)
           const token = localStorage.getItem('token')
@@ -249,7 +329,14 @@ export default {
               body: JSON.stringify({status: status})
           })
           const data = await response.json()
-          alert(data.message)
+          if (response.ok) {
+            this.successMessage = data.message 
+            this.errorMessage = ''
+            this.selectedJobApplications = []
+          } else {
+            this.errorMessage = data.message
+            this.successMessage = ''
+          }
           this.viewApplications(this.selectedJob.id)
         },
         async closeJob(jobId) {
@@ -263,8 +350,45 @@ export default {
               body: JSON.stringify({ status: 'closed'})
           })
           const data = await response.json()
-          alert(data.message)
-          this.fetchJobs()
+          if (response.ok) {
+            this.successMessage = data.message 
+            this.errorMessage = ''
+            this.fetchJobs()
+          } else {
+            this.errorMessage = data.message 
+            this.successMessage = ''
+          }
+          
+        },
+        async fetchBranches() {
+          const response = await fetch('http://127.0.0.1:5000/public/branches')
+          this.branches = await response.json()
+        },
+        editJob(job) {
+          this.editingJob = {...job}
+          this.showEditForm = true 
+          this.showJobForm = false
+        },
+        async submitEdit() {
+          const token = localStorage.getItem('token')
+          const response = await fetch('http://127.0.0.1:5000/company/jobs/${this.editingJob.id}',{
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(this.editingJob)
+          })
+          const data = await response.json()
+          if (response.ok) {
+            this.successMessage = data.message
+            this.errorMessage = ''
+            this.showEditForm = false 
+            this.fetchJobs()
+          } else {
+            this.errorMessage = data.message
+            this.successMessage = ''
+          }
         }
     }
 } 
