@@ -59,7 +59,7 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Salary</label>
-              <input type="number" class="form-control" placeholder="in p.m." v-model="newJob.salary">
+              <input type="number" class="form-control" placeholder="in lpa" v-model="newJob.salary">
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Minimum CGPA</label>
@@ -98,7 +98,7 @@
           <h5 class="fw-bold mb-3">Edit Placement Drive</h5>
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label">Job Tiltle *</label>
+              <label class="form-label">Job Title *</label>
               <input type="text" class="form-control" v-model="editingJob.title">
             </div>
             <div class="col-md-6 mb-3">
@@ -119,7 +119,10 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Eligible Branch</label>
-              <input type="text" class="form-control" v-model="editingJob.eligible_branch">
+              <select class="form-select" v-model="editingJob.eligible_branch">
+                <option value="">All Branches</option>
+                <option v-for="branch in branches" :key="branch" :value="branch">{{ branch }}</option>
+              </select>
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Eligible Year</label>
@@ -162,6 +165,7 @@
                 <p class="text-muted small mb-0">Applicants: {{ job.total_applications }}</p>
                 <div class="d-flex gap-2 mt-2">
                   <button class="btn btn-warning btn-sm" v-if="job.status === 'approved'" @click="closeJob(job.id)">Close Drive</button>
+                  <button class="btn btn-outline-primary btn-sm" @click="editJob(job)">Edit</button>
                 </div>
               </div>
             </div>
@@ -371,7 +375,7 @@ export default {
         },
         async submitEdit() {
           const token = localStorage.getItem('token')
-          const response = await fetch('http://127.0.0.1:5000/company/jobs/${this.editingJob.id}',{
+          const response = await fetch(`http://127.0.0.1:5000/company/jobs/${this.editingJob.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

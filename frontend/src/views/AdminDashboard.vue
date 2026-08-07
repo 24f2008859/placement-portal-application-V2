@@ -2,6 +2,14 @@
   <div style="background-color: #f8fafc; min-height: 100vh;">
     <NavBar />
     <div class="container-fluid px-4 py-4">
+      <div v-if="successMessage" class="alert alert-success alert-dismissable fade show mb-3">
+        {{ successMessage }}
+        <button type="button" class="btn-close" @click="successMessage = ''"></button>
+      </div>
+      <div v-if="errorMessage" class="alert alert-danger alert-dismissable fade show mb-3">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" @click="errorMessage = ''"></button>
+      </div>
       <!-- Header -->
       <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
@@ -207,7 +215,7 @@
                   <td>{{ job.title }}</td>
                   <td>{{ job.company }}</td>
                   <td>{{ job.location }}</td>
-                  <td>{{ job.salary }}</td>
+                  <td>{{ job.salary }} LPA</td>
                   <td>
                     <span class="badge" :class="job.status === 'approved' ? 'bg-success' : job.status === 'pending' ? 'bg-warning' : 'bg-secondary'">
                       {{ job.status.toUpperCase() }}
@@ -383,7 +391,9 @@ export default {
             activeTab: 'overview',
             chartData: null,
             companyChart: null,
-            statusChart: null
+            statusChart: null,
+            successMessage: '',
+            errorMessage: ''
         }
         
     },
@@ -423,7 +433,7 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.fetchPendingCompanies()
             this.fetchStats()
         },
@@ -436,7 +446,7 @@ export default {
                 }    
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.fetchPendingCompanies()
             this.fetchStats()
         },
@@ -462,7 +472,7 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.searchCompanies()
         },
         async searchStudents() {
@@ -487,7 +497,7 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.searchStudents()
         },
         async fetchAllJobs() {
@@ -509,7 +519,7 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.fetchAllJobs()
             this.fetchStats()
         },
@@ -522,7 +532,7 @@ export default {
                 }
             })
             const data = await response.json()
-            alert(data.message)
+            this.successMessage = data.message
             this.fetchAllJobs()
             this.fetchStats()
         },
@@ -556,7 +566,7 @@ export default {
             headers: { 'Authorization': `Bearer ${token}`}
           })
           const data = await response.json()
-          alert(data.message)
+          this.successMessage = data.message
         },
         async generateReport() {
           const token = localStorage.getItem('token')
@@ -565,7 +575,7 @@ export default {
             headers: { 'Authorization': `Bearer ${token}`}
           })
           const data = await response.json()
-          alert(data.message)
+          this.successMessage = data.message
         },
         async loadCharts() {
           const token = localStorage.getItem('token')

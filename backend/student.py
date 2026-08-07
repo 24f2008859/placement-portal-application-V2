@@ -115,7 +115,9 @@ def get_approved_jobs():
             'location': job.location,
             'salary': job.salary,
             'skills_required': job.skills_required,
-            'description': job.description
+            'description': job.description,
+            'eligible_branch': job.eligible_branch,
+            'minimum_cgpa': job.minimum_cgpa
         })
 
     return jsonify(result), 200

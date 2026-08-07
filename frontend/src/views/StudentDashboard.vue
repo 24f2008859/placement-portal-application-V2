@@ -79,14 +79,16 @@
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <h5 class="fw-bold mb-0">{{ job.title }}</h5>
-                  <span class="badge bg-success">Eligible</span>
+                  <span class="badge" :class="isEligible(job) ? 'bg-success' : 'bg-danger'">{{ isEligible(job) ? 'Eligible' : 'Not Eligible' }}</span>
                 </div>
                 <p class="text-primary small fw-bold mb-2">{{ job.company }}</p>
                 <p class="text-muted small mb-2">{{ job.description }}</p>
                 <div class="row small text-muted mb-3">
-                  <div class="col-6">Package: <strong class="text-dark">{{ job.salary }}</strong></div>
+                  <div class="col-6">Package: <strong class="text-dark">{{ job.salary }} LPA</strong></div>
                   <div class="col-6">Location: <strong class="text-dark">{{ job.location }}</strong></div>
                   <div class="col-12 mt-1">Skills: <strong class="text-dark">{{ job.skills_required }}</strong></div>
+                  <div class="col-6 mt-1" v-if="job.eligible_branch">Branch: <strong class="text-dark">{{ job.eligible_branch }}</strong></div>
+                  <div class="col-6 mt-1" v-if="job.minimum_cgpa">Min CGPA: <strong class="text-dark">{{ job.minimum_cgpa }}</strong></div>
                 </div>
                 <button class="btn btn-primary w-100" @click="applyJob(job.id)">Apply for Drive</button>
               </div>
@@ -412,6 +414,18 @@ export default {
         async fetchBranches() {
           const response = await fetch('http://127.0.0.1:5000/public/branches')
           this.branches = await response.json()
+        },
+        isEligible(job) {
+          if (job.minimum_cgpa && (!this.profile.cgpa || this.profile.cgpa < job.minimum_cgpa)) {
+            return false
+          }
+          if (job.eligible_branch && this.profile.branch && this.profile.branch.toLowerCase() !== job.eligible_branch.toLowerCase()) {
+            return false
+          }
+          if (job.eligible_year && this.profile.graduation_year && this.profile.graduation_year != job.eligible_year) {
+            return false 
+          }
+          return false 
         }
     }
 }
