@@ -164,8 +164,9 @@
                 <p class="text-muted small mb-1">Salary: {{ job.salary }} LPA</p>
                 <p class="text-muted small mb-0">Applicants: {{ job.total_applications }}</p>
                 <div class="d-flex gap-2 mt-2">
-                  <button class="btn btn-warning btn-sm" v-if="job.status === 'approved'" @click="closeJob(job.id)">Close Drive</button>
-                  <button class="btn btn-outline-primary btn-sm" @click="editJob(job)">Edit</button>
+                  <button class="btn btn-warning btn-sm" v-if="job.status === 'approved'" @click.stop="closeJob(job.id)">Close Drive</button>
+                  <button class="btn btn-outline-primary btn-sm" @click.stop="editJob(job)">Edit</button>
+                  <button class="btn btn-outline-danger btn-sm" @click.stop="deleteJob(job.id)">Delete</button>
                 </div>
               </div>
             </div>
@@ -393,7 +394,45 @@ export default {
             this.errorMessage = data.message
             this.successMessage = ''
           }
+        },
+        async deleteJob(jobId) {
+          const confirmed = confirm('Are you sure to delete this placement drive?')
+        
+          if (!confirmed) return 
+          const token = localStorage.getItem('token')
+          try {
+            const response = await fetch(
+              `http://127.0.0.1:5000/company/jobs/${jobId}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            )
+            const data = await response.json()
+
+            if (response.ok) {
+              this.successMessage = data.message
+              this.errorMessage = ''
+
+              await this.fetchJobs()
+              await this.fetchDashboard()
+
+              if (this.selectedJob && this.selectedJob.id === jobId) {
+                this.selectedJob = null 
+                this.selectedJobApplications = []
+              }
+          } else {
+              this.errorMessage = data.message || 'Failed to delete the placement drive.'
+              this.successMessage = ''
+          }
+        } catch (error) {
+            console.error(error)
+            this.errorMessage = 'Something went wrong'
+            this.successMessage = ''
         }
     }
-} 
+  }
+}   
 </script>

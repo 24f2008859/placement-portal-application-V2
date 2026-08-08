@@ -204,6 +204,36 @@ def get_job_applications(job_id):
         })
     return jsonify(result), 200
 
+
+@company_bp.route('/company/jobs/<int:job_id>', methods=['DELETE'])
+@jwt_required()
+def delete_job(job_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != 'company':
+        return jsonify({'message': 'Compnay access required'}), 403
+
+    company = get_current_company(current_user_id)
+
+    job = Job.query.get(job_id)
+
+    if not job or job.company_id != company.id:
+        return jsonify({'message': 'Job not found'}), 404
+
+    if len(job.applications) > 0:
+        return jsonify({
+            'message': 'Cannot delete a drive that already has applications.'
+        }), 400
+    db.session.delete(job)
+    db.session.commit()
+
+    cache.delete('admin_stats')
+
+    return jsonify({
+        'message': 'Placement drive deleted successfully'
+    }), 200
+
 @company_bp.route('/company/applications/<int:app_id>/status', methods=['PUT'])
 @jwt_required()
 def update_application_status(app_id):

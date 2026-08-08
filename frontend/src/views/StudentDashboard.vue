@@ -21,7 +21,8 @@
               </h3>
               <p class="text-muted small mb-1">
                 Education: <strong>{{ profile.education }}</strong> • 
-                Skills: <strong>{{ profile.skills }}</strong>
+                Skills: <strong>{{ profile.skills }}</strong> • 
+                Branch: <strong>{{ profile.branch }}</strong>
               </p>
             </div>
             <div class="d-flex gap-2">
@@ -425,7 +426,7 @@ export default {
           if (job.eligible_year && this.profile.graduation_year && this.profile.graduation_year != job.eligible_year) {
             return false 
           }
-          return false 
+          return true 
         }
     }
 }
