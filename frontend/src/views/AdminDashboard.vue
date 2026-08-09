@@ -112,7 +112,7 @@
         <div class="card-body">
           <!-- Overview Tab -->
           <div v-if="activeTab === 'overview'">
-            <h5 class="fw-bold mb-3">⚠️ Pending Approvals Queue</h5>
+            <h5 v-if="pendingCompanies.length > 0 || pendingJobsCount > 0" class="fw-bold mb-3">⚠️ Pending Approvals Queue</h5>
             <div class="alert alert-warning d-flex justify-content-between align-items-center" v-if="pendingCompanies.length > 0">
               <div>
                 <strong>Company Registrations Pending Approval</strong>
@@ -120,10 +120,10 @@
               </div>
               <button class="btn btn-warning btn-sm" @click="activeTab = 'companies'">Review Companies</button>
             </div>
-            <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div class="alert alert-info d-flex justify-content-between align-items-center" v-if="pendingJobsCount > 0">
               <div>
                 <strong>Placement Drives Pending Approval</strong>
-                <p class="mb-0 small">{{ stats.total_jobs }} drives waiting for admin go-ahead.</p>
+                <p class="mb-0 small">{{ pendingJobsCount }} drives waiting for admin go-ahead.</p>
               </div>
               <button class="btn btn-info btn-sm text-white" @click="activeTab = 'jobs'">Review Drives</button>
             </div>
@@ -396,6 +396,11 @@ export default {
             errorMessage: ''
         }
         
+    },
+    computed: {
+      pendingJobsCount() {
+        return this.allJobs.filter(job => job.status === 'pending').length
+      }
     },
     mounted() {
         this.fetchStats()
