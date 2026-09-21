@@ -91,6 +91,14 @@
                   <div class="col-6 mt-1" v-if="job.eligible_branch">Branch: <strong class="text-dark">{{ job.eligible_branch }}</strong></div>
                   <div class="col-6 mt-1" v-if="job.minimum_cgpa">Min CGPA: <strong class="text-dark">{{ job.minimum_cgpa }}</strong></div>
                 </div>
+                <div class="d-flex gap-2 align-items-center mb-2">
+                  <button class="btn btn-outline-primary btn-sm" @click="checkMatchScore(job.id)">
+                    Check Match %
+                  </button>
+                  <span v-if="matchScores[job.id] !== undefined" class="badge bg-info text-dark">
+                    {{ matchScores[job.id] }}% Match 
+                  </span>
+                </div>
                 <button class="btn btn-primary w-100" @click="applyJob(job.id)">Apply for Drive</button>
               </div>
             </div>
@@ -249,7 +257,8 @@ export default {
             activeTab: 'jobs',
             branches: [],
             successMessage: '',
-            errorMessage: ''
+            errorMessage: '',
+            matchScores: {}
         }
     },
     mounted() {
@@ -411,6 +420,14 @@ export default {
                 this.exportMessage = 'Still processing...'
                 setTimeout(() => this.checkExportStatus(), 3000)
             }
+        },
+        async checkMatchScore(jobId) {
+          const token = localStorage.getItem('token')
+          const response = await fetch(`http://127.0.0.1:5000/student/jobs/${jobId}/match-score`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          const data = await response.json()
+          this.matchScores[jobId] = data.match_score
         },
         async fetchBranches() {
           const response = await fetch('http://127.0.0.1:5000/public/branches')

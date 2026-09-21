@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, cache 
 from models import User, Student, Job, Application 
+from ml.resume_matcher import compute_match_score
 
 student_bp = Blueprint('student', __name__)
 
@@ -257,6 +258,31 @@ def apply_job(job_id):
     db.session.commit()
 
     return jsonify({'message': 'Application submitted successfully'}), 201
+
+@student_bp.route('/student/jobs/<int:job_id>/match-score', methods=['GET'])
+@jwt_required()
+def get_match_score(job_id):
+    current_user_id = get_jwt_identity()
+    currnet_user = User.query.get(current_user_id)
+
+    if currnet_user.role != 'student':
+        return jsonify({'message': 'Student access required'}), 403
+
+    student = get_current_student(current_user_id)
+    job = Job.query.get(job_id)
+
+    if not job:
+        return jsonify({'message': 'Job not found'}), 404
+
+    student_text = student.skills or ''
+    job_text = job.skills_required or ''
+
+    if not student_text.strip() or not job_text.strip():
+        return jsonify({'message': 'Not enough data to compute match score', 'match_score': 0}), 200
+
+    score = compute_match_score(student_text, job_text)
+
+    return jsonify({'match_score': score}), 200
 
 @student_bp.route('/student/applications', methods=['GET'])
 @jwt_required()
