@@ -12,7 +12,7 @@ A full-stack placement management portal built with Flask REST API and VueJS fro
 - Flask-JWT-Extended (Authentication)
 - Flask-Mail (Email Notifications)
 - Flask-CORS (Cross-Origin Resource Sharing)
-
+- scikit-learn (TF-IDF vectorization, cosine similarity for resume-job matching)
 ### Frontend
 - VueJS 3
 - Vue Router
@@ -141,6 +141,7 @@ mailpit
 - GET /student/applications
 - GET /student/placements
 - POST /student/export
+- /student/jobs/<id>/match-score | GET | Compute resume-job match score using TF-IDF + cosine similarity |
 
 ## Background Jobs (Celery)
 - Daily interview reminders (9:00 AM)
@@ -150,3 +151,7 @@ mailpit
 ## Caching (Redis)
 - Admin dashboard stats (5 min expiry)
 - Approved jobs list (5 min expiry)
+
+## ML Features
+- **Resume/Job Match Score** 
+    - Students can check a real-time compatibility score (0-100%) between profile skills and any job's required skills, computed using TF-IDF vectorization and cosine similarity (scikit-learn). Located in `backend/ml/resume_matcher.py`, exposed via `GET /student/jobs/<id>/match-score`, displayed on-demand on each job card in the student dashboard.
